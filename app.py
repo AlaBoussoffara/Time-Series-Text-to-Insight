@@ -4,7 +4,11 @@ import chainlit as cl
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import HumanMessage
 from langchain_community.chat_message_histories import SQLChatMessageHistory
+from dotenv import load_dotenv
+import os
 from llm import llm_from
+
+load_dotenv()
 
 PERSIST_DIR = Path(".chainlit_memory")
 PERSIST_DIR.mkdir(parents=True, exist_ok=True)
@@ -34,8 +38,8 @@ async def on_chat_start():
     session_id = user.identifier if user else "anonymous"
     cl.user_session.set("memory", build_memory(session_id))
 
-
-llm = llm_from("mistral-ollama")
+USE_MODEL = os.getenv("USE_MODEL", "mistral-ollama")
+llm = llm_from(USE_MODEL)
 
 @cl.on_message
 async def main(message: cl.Message):
