@@ -1,3 +1,7 @@
 chainlit
 langchain
 langgraph
+plotly
+langchain-ollama
+langchain-mistralai
+langchain-community
