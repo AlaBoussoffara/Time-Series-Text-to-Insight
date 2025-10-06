@@ -78,6 +78,25 @@ def _step_to_message(step: dict) -> Optional[tuple[float, BaseMessage]]:
     if step_type == "user_message":
         return ts, HumanMessage(content=content)
     return ts, AIMessage(content=content)
+async def _load_thread_messages(thread_id: str) -> list[BaseMessage]:
+    if not get_data_layer:
+        return []
+    dl = get_data_layer()
+    try:
+        thread = await dl.get_thread(thread_id)
+    except Exception:
+        return []
+
+    steps = thread.get("steps", []) if isinstance(thread, dict) else []
+    collected: list[tuple[float, BaseMessage]] = []
+    for step in steps:
+        if isinstance(step, dict):
+            converted = _step_to_message(step)
+            if converted:
+                collected.append(converted)
+
+    collected.sort(key=lambda x: x[0])
+    return [m for _, m in collected]
 
 
 async def _load_user_message_history(user_identifier: str) -> Sequence[BaseMessage]:
@@ -220,3 +239,25 @@ async def main(message: cl.Message):
     await msg.update()
 
     memory.save_context({"input": message.content}, {"output": "".join(response_chunks)})
+@cl.on_chat_resume
+async def on_chat_resume(thread: dict):
+    # 1) bind the chosen thread to this live session
+    thread_id = thread.get("id")
+    if isinstance(thread_id, str):
+        cl.user_session.set("thread_id", thread_id)
+
+    # 2) (re)build memory for this thread
+    session_id = _current_session_identifier()  # will now include this thread id if MEMORY_SCOPE=="conversation"
+    memory = _get_or_create_memory(session_id)
+
+    # 3) seed memory with that thread’s messages
+    msgs = await _load_thread_messages(thread_id)
+    # clear old memory and load this thread history
+    try:
+        # LangChain ConversationBufferMemory API
+        memory.chat_memory.messages = []
+    except Exception:
+        pass
+    for m in msgs:
+        memory.chat_memory.add_message(m)
+
