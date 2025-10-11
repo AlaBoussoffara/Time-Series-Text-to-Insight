@@ -12,11 +12,12 @@ def llm_from(provider=None):
         api_key = os.getenv("MISTRAL_API_KEY")
         return ChatMistralAI(
             model=cloud_model,
-            api_key=api_key
+            api_key=api_key,
+            temperature=0
         )
     
-    if provider == "mistral-ollama":
-        local_model = os.getenv("MISTRAL_LOCAL_MODEL")
-        return ChatOllama(model=local_model)
+    if provider == "ollama":
+        local_model = os.getenv("LOCAL_MODEL")
+        return ChatOllama(model=local_model, temperature=0)
     
-    raise ValueError("choose from \"mistral-cloud\" or \"mistral-ollama\"")
+    raise ValueError("choose from \"mistral-cloud\" or \"ollama\"")
