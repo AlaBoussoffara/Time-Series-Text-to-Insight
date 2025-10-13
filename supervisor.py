@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Annotated, Literal, Optional, Sequence, TypedDict
 
@@ -31,15 +30,9 @@ def _system_prompt() -> SystemMessage:
     return SystemMessage(SUPERVISOR_PROMPT_TEXT)
 
 
-def load_llm(provider: Optional[str] = None):
-    """Return an LLM instance for the given provider or the environment default."""
-    use_model = provider or os.getenv("USE_MODEL", "ollama")
-    return llm_from(use_model)
-
-
-def build_supervisor_graph(llm) -> StateGraph:
-    """Build and compile the supervisor graph for the provided LLM."""
-    llm_supervisor = llm.with_structured_output(Step)
+def build_supervisor_graph() -> StateGraph:
+    """Build and compile the supervisor graph using the Haiku model."""
+    llm_supervisor = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0").with_structured_output(Step)
 
     def supervisor_node(state: OverallState) -> OverallState:
         step = llm_supervisor.invoke(state["messages"])
@@ -141,11 +134,9 @@ def run_supervisor(
     *,
     history: Optional[Sequence[BaseMessage]] = None,
     log: bool = True,
-    llm_name: Optional[str] = None,
 ):
     """Execute the supervisor graph and return the final message."""
-    llm = load_llm(llm_name)
-    compiled_graph = build_supervisor_graph(llm)
+    compiled_graph = build_supervisor_graph()
     messages: list[AnyMessage] = [_system_prompt()]
     if history:
         for msg in history:

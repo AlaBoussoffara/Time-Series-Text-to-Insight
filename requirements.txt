@@ -6,3 +6,4 @@ langchain-ollama
 langchain-mistralai
 langchain-community
 langgraph_supervisor
+langchain-aws
