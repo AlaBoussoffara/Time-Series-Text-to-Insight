@@ -6,9 +6,8 @@ from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMes
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
-
-from llm import llm_from
-
+from sql_agent import create_sql_agent 
+from llm import llm_from 
 dotenv.load_dotenv()
 
 PROMPT_PATH = Path("supervisor_prompt.txt")
@@ -24,7 +23,7 @@ class Step(BaseModel):
 
 class OverallState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
-
+    datastore: dict
 
 def _system_prompt() -> SystemMessage:
     return SystemMessage(SUPERVISOR_PROMPT_TEXT)
@@ -33,7 +32,8 @@ def _system_prompt() -> SystemMessage:
 def build_supervisor_graph() -> StateGraph:
     """Build and compile the supervisor graph using the Haiku model."""
     llm_supervisor = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0").with_structured_output(Step)
-
+    llm_sql = create_sql_agent(llm_from())
+    
     def supervisor_node(state: OverallState) -> OverallState:
         step = llm_supervisor.invoke(state["messages"])
         ai_msg = AIMessage(
@@ -51,8 +51,8 @@ def build_supervisor_graph() -> StateGraph:
         return "thought"
 
     def sql_agent_node(state: OverallState) -> OverallState:
-        ai_msg = AIMessage(content="SQL query executed successfully.", name="SQL Agent")
-        return {"messages": [ai_msg]}
+        res = llm_sql.invoke({"question": state["messages"][-1].additional_kwargs["structured"]["content"]})
+        return {"datastore": {res["reference_key"]:{"description": res["description"],"data":res["query_result"]}},"messages":[AIMessage(content="tache réussie, il y a un capteur avec 43 enregistrements", name="SQL Agent")]}
 
     def analysis_agent_node(state: OverallState) -> OverallState:
         ai_msg = AIMessage(content="Data analysis completed successfully.", name="Analysis Agent")
