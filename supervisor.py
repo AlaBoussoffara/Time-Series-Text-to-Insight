@@ -12,7 +12,7 @@ from llm import llm_from
 dotenv.load_dotenv()
 
 PROMPT_PATH = Path("supervisor_prompt.txt")
-SUPERVISOR_PROMPT_TEXT = PROMPT_PATH.read_text()
+SUPERVISOR_PROMPT_TEXT = PROMPT_PATH.read_text(encoding="utf-8")
 
 
 class Step(BaseModel):
