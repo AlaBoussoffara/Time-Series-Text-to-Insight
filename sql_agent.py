@@ -7,10 +7,8 @@ import sqlite3
 import json
 from pydantic import BaseModel, Field
 from langchain.output_parsers import PydanticOutputParser
-
-
 from typing import TypedDict, List, Any
-from typing import TypedDict, List, Any
+import pprint
 
 class GraphState(TypedDict):
     """
@@ -165,8 +163,7 @@ def execute_sql_node(state: GraphState):
         
     return state
 
-#### Création de la référerence et description ####
-from pydantic import BaseModel, Field
+#### Création de la référerence et description ###
 
 class ReferenceOutput(BaseModel):
     """Un modèle pour contenir une clé de référence et sa description."""
@@ -285,32 +282,33 @@ sql_agent_mvp = workflow.compile()
 #  définition de GraphState, et les fonctions retrieve_schema_node et generate_sql_node)
 
 # Question de l'utilisateur
-# user_question = "Montre-moi tous les capteurs qui se trouvent à Paris. Donne-moi leur ID et leur type."
+user_question = "Montre-moi tous les capteurs qui se trouvent à Paris. Donne-moi leur ID et leur type."
 
-# # Pour rendre l'exemple intéressant, ajoutons une donnée
-# cursor.execute("INSERT INTO sensors (id, location, type) VALUES ('sensor_789', 'Paris', 'Température');")
-# conn.commit()
+# Pour rendre l'exemple intéressant, ajoutons une donnée
+cursor.execute("INSERT INTO sensors (id, location, type) VALUES ('sensor_789', 'Paris', 'Température');")
+conn.commit()
 
-# # Lancer le graphe avec l'entrée initiale
-# initial_state = {"question": user_question, "query_result": []} # Initialiser query_result
-# final_state = sql_agent_mvp.invoke(initial_state)
+# Lancer le graphe avec l'entrée initiale
+initial_state = {"question": user_question, "query_result": []} # Initialiser query_result
+final_state = sql_agent_mvp.invoke(initial_state)
 
-# # Afficher le résultat complet
-# print("\n--- ✅ RÉSULTAT FINAL COMPLET ---")
-# print(f"Question : {final_state['question']}")
-# print(f"Requête SQL générée :\n{final_state['sql_query']}")
-# print(f"Résultat de la requête : {final_state['query_result']}")
+# Afficher le résultat complet
+print("\n--- ✅ RÉSULTAT FINAL COMPLET ---")
+print(f"Question : {final_state['question']}")
+print(f"Requête SQL générée :\n{final_state['sql_query']}")
+print(f"Résultat de la requête : {final_state['query_result']}")
+pprint.pprint(DATASTORE)
 
 # (Assurez-vous que le code des étapes précédentes est présent et exécuté)
 
 # Question de l'utilisateur
-user_question_3 = "Combien y a-t-il de relevés pour chaque capteur ?"
+# user_question_3 = "Combien y a-t-il de relevés pour chaque capteur ?"
 
-# Lancer le graphe
-initial_state = {"question": user_question_3}
-final_state = sql_agent_mvp.invoke(initial_state)
+# # Lancer le graphe
+# initial_state = {"question": user_question_3}
+# final_state = sql_agent_mvp.invoke(initial_state)
 
-# Afficher le contenu du datastore pour vérifier
-print("\n--- 🗄️ CONTENU DU DATASTORE ---")
-import pprint
-pprint.pprint(DATASTORE)
+# # Afficher le contenu du datastore pour vérifier
+# print("\n--- 🗄️ CONTENU DU DATASTORE ---")
+# import pprint
+# pprint.pprint(DATASTORE)
