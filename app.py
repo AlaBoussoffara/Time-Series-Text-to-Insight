@@ -12,7 +12,7 @@ from langchain.schema import AIMessage, BaseMessage, HumanMessage
 from langchain_community.chat_message_histories import SQLChatMessageHistory
 
 from datalayer import SQLiteDataLayer
-from supervisor import run_supervisor
+from agents.supervisor_agent import run_supervisor
 
 try:  # Chainlit 1.0+
     from chainlit.data import get_data_layer

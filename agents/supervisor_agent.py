@@ -6,24 +6,14 @@ from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMes
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
-from sql_agent import create_sql_agent 
+from agents.sql_agent import create_sql_agent 
 from llm import llm_from 
+from utils.states import OverallState
+from utils.output_basemodels import SupervisorOutput
 dotenv.load_dotenv()
 
-PROMPT_PATH = Path("supervisor_prompt.txt")
+PROMPT_PATH = Path("prompts/supervisor_prompt.txt")
 SUPERVISOR_PROMPT_TEXT = PROMPT_PATH.read_text(encoding="utf-8")
-
-
-class Step(BaseModel):
-    output: Literal["plan", "thought", "final_answer", "SQL Agent", "Analysis Agent", "Visualization Agent"] = Field(
-        ..., description="Either 'plan', 'thought', 'final_answer', or an agent name."
-    )
-    content: str = Field(..., description="content for the chosen output.")
-
-
-class OverallState(TypedDict):
-    messages: Annotated[list[AnyMessage], add_messages]
-    datastore: dict
 
 def _system_prompt() -> SystemMessage:
     return SystemMessage(SUPERVISOR_PROMPT_TEXT)
@@ -31,14 +21,22 @@ def _system_prompt() -> SystemMessage:
 
 def build_supervisor_graph() -> StateGraph:
     """Build and compile the supervisor graph using the Haiku model."""
-    llm_supervisor = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0").with_structured_output(Step)
-    llm_sql = create_sql_agent(llm_from())
+    
+    supervisor_llm = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0").with_structured_output(SupervisorOutput)
+    
+    sql_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
+    #analysis_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
+    #visualization_llm = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0")
+    
+    sql_agent = create_sql_agent(sql_llm)
+    #analysis_agent = create_analysis_agent(analysis_llm)
+    #visualization_agent = create_visualization_agent(visualization_llm)
     
     def supervisor_node(state: OverallState) -> OverallState:
-        step = llm_supervisor.invoke(state["messages"])
+        SupervisorOutput = supervisor_llm.invoke(state["messages"])
         ai_msg = AIMessage(
-            content=step.model_dump_json(),
-            additional_kwargs={"structured": step.model_dump()},
+            content=SupervisorOutput.model_dump_json(),
+            additional_kwargs={"structured": SupervisorOutput.model_dump()},
             name="Supervisor",
         )
         return {"messages": [ai_msg]}
@@ -51,7 +49,7 @@ def build_supervisor_graph() -> StateGraph:
         return "thought"
 
     def sql_agent_node(state: OverallState) -> OverallState:
-        res = llm_sql.invoke({"question": state["messages"][-1].additional_kwargs["structured"]["content"]})
+        res = sql_agent.invoke({"question": state["messages"][-1].additional_kwargs["structured"]["content"]})
         return {"datastore": {res["reference_key"]:{"description": res["description"],"data":res["query_result"]}},"messages":[AIMessage(content="tache réussie, il y a un capteur avec 43 enregistrements", name="SQL Agent")]}
 
     def analysis_agent_node(state: OverallState) -> OverallState:
