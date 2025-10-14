@@ -1,197 +1,201 @@
+from __future__ import annotations
+
+import os
+import textwrap
 from pathlib import Path
 from typing import Optional, Sequence
 
-from datetime import datetime
-
 import chainlit as cl
+from dotenv import load_dotenv
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import AIMessage, BaseMessage, HumanMessage
 from langchain_community.chat_message_histories import SQLChatMessageHistory
-from dotenv import load_dotenv
-import os
-from llm import llm_from
+
 from datalayer import SQLiteDataLayer
+from supervisor import run_supervisor
 
-try:
+try:  # Chainlit 1.0+
     from chainlit.data import get_data_layer
-    from chainlit.types import Pagination, ThreadFilter
-except ImportError:  # pragma: no cover - handled by runtime environment
+except ImportError:  # pragma: no cover - runtime fallback
     get_data_layer = None  # type: ignore
-    Pagination = None  # type: ignore
-    ThreadFilter = None  # type: ignore
 
 try:
-    from chainlit.context import get_current_context, context as cl_context
-except ImportError:  # Fallback for older Chainlit versions
-    get_current_context = None
-    cl_context = None
+    from chainlit.context import get_current_context
+except ImportError:  # pragma: no cover - older Chainlit
+    get_current_context = None  # type: ignore
 
 load_dotenv()
 
 PERSIST_DIR = Path(".chainlit_memory")
 PERSIST_DIR.mkdir(parents=True, exist_ok=True)
 
+DEFAULT_SCOPE = os.getenv("CHAT_MEMORY_SCOPE", "conversation").strip().lower()
+HISTORY_OPTIONS = {"conversation", "user"}
+if DEFAULT_SCOPE not in HISTORY_OPTIONS:
+    DEFAULT_SCOPE = "conversation"
+
+USERS = {"demo": "demo123"}
+SCOPE_COMMAND_PREFIX = "scope:"
+
 
 @cl.data_layer
 def configure_data_layer() -> SQLiteDataLayer:
     return SQLiteDataLayer(PERSIST_DIR / "chat_data.db")
 
-USERS = {"demo": "demo123"}
+
+def _normalize_scope(value: Optional[str]) -> str:
+    if isinstance(value, str) and value.lower() in HISTORY_OPTIONS:
+        return value.lower()
+    return DEFAULT_SCOPE
 
 
-ALLOWED_MEMORY_SCOPES = {"conversation", "user", "all"}
-MEMORY_SCOPE = os.getenv("CHAT_MEMORY_SCOPE", "conversation").strip().lower()
-if MEMORY_SCOPE not in ALLOWED_MEMORY_SCOPES:
-    MEMORY_SCOPE = "conversation"
-
-PERSISTED_SCOPE = MEMORY_SCOPE in {"user", "all"}
+def _user_identifier() -> str:
+    user = cl.user_session.get("user")
+    return getattr(user, "identifier", "anonymous")
 
 
-def build_memory(session_id: str) -> ConversationBufferMemory:
-    if PERSISTED_SCOPE:
+def _resolve_thread_id() -> Optional[str]:
+    session_thread = cl.user_session.get("thread_id")
+    if isinstance(session_thread, str):
+        return session_thread
+    if get_current_context:
+        ctx = get_current_context()
+        if ctx is not None:
+            thread = getattr(ctx, "thread", None)
+            ctx_thread = getattr(ctx, "thread_id", None)
+            if thread is not None and getattr(thread, "id", None):
+                return thread.id  # type: ignore[attr-defined]
+            if isinstance(ctx_thread, str):
+                return ctx_thread
+    return None
+
+
+def _memory_session_key(scope: str, owner: str, thread_id: Optional[str]) -> str:
+    if scope == "user":
+        return owner
+    return f"{owner}:{thread_id or 'live'}"
+
+
+def _build_memory(scope: str, owner: str, thread_id: Optional[str]) -> ConversationBufferMemory:
+    if scope == "user":
         connection = f"sqlite:///{PERSIST_DIR / 'chat_history.db'}"
-        history = SQLChatMessageHistory(
-            session_id=session_id,
-            connection=connection,
-        )
+        history = SQLChatMessageHistory(session_id=owner, connection=connection)
         return ConversationBufferMemory(chat_memory=history, return_messages=True)
     return ConversationBufferMemory(return_messages=True)
 
 
-def _parse_iso(timestamp: Optional[str]) -> float:
-    if not timestamp:
-        return 0.0
-    try:
-        return datetime.fromisoformat(timestamp.replace("Z", "+00:00")).timestamp()
-    except ValueError:
-        return 0.0
+def _current_scope() -> str:
+    scope = _normalize_scope(cl.user_session.get("history_scope"))
+    cl.user_session.set("history_scope", scope)
+    return scope
 
 
-def _step_to_message(step: dict) -> Optional[tuple[float, BaseMessage]]:
+def _history_from_memory(memory: ConversationBufferMemory) -> Sequence[BaseMessage]:
+    data = memory.load_memory_variables({})
+    history = data.get("history", [])
+    if isinstance(history, list):
+        return history
+    return []
+
+
+def _chunk_text(text: str, width: int = 200) -> list[str]:
+    if not text:
+        return []
+    return textwrap.wrap(text, width=width, replace_whitespace=False)
+
+
+def _step_to_message(step: dict) -> Optional[BaseMessage]:
     step_type = step.get("type")
     if step_type not in {"user_message", "assistant_message"}:
         return None
     content = step.get("output") or step.get("content") or step.get("input") or ""
     if not isinstance(content, str) or not content.strip():
         return None
-    ts = _parse_iso(step.get("createdAt"))
     if step_type == "user_message":
-        return ts, HumanMessage(content=content)
-    return ts, AIMessage(content=content)
+        return HumanMessage(content=content)
+    return AIMessage(content=content)
+
+
 async def _load_thread_messages(thread_id: str) -> list[BaseMessage]:
     if not get_data_layer:
         return []
-    dl = get_data_layer()
-    try:
-        thread = await dl.get_thread(thread_id)
-    except Exception:
-        return []
-
-    steps = thread.get("steps", []) if isinstance(thread, dict) else []
-    collected: list[tuple[float, BaseMessage]] = []
-    for step in steps:
-        if isinstance(step, dict):
-            converted = _step_to_message(step)
-            if converted:
-                collected.append(converted)
-
-    collected.sort(key=lambda x: x[0])
-    return [m for _, m in collected]
-
-
-async def _load_user_message_history(user_identifier: str) -> Sequence[BaseMessage]:
-    if not PERSISTED_SCOPE or not get_data_layer or not Pagination or not ThreadFilter:
-        return []
-
     data_layer = get_data_layer()
     if not data_layer:
         return []
-
     try:
-        persisted_user = await data_layer.get_user(user_identifier)
-    except Exception:
-        persisted_user = None
-    if not persisted_user or not getattr(persisted_user, "id", None):
-        return []
-
-    try:
-        response = await data_layer.list_threads(
-            Pagination(first=500),
-            ThreadFilter(userId=persisted_user.id),
-        )
+        thread = await data_layer.get_thread(thread_id)
     except Exception:
         return []
-
-    if hasattr(response, "data"):
-        threads = response.data  # type: ignore[attr-defined]
-    elif isinstance(response, dict):
-        threads = response.get("data", [])
-    else:
-        threads = []
-    collected: list[tuple[float, BaseMessage]] = []
-
-    for thread in threads:
-        thread_id = thread.get("id") if isinstance(thread, dict) else None
-        if not thread_id:
-            continue
-        try:
-            full_thread = await data_layer.get_thread(thread_id)
-        except Exception:
-            continue
-        steps = (full_thread or {}).get("steps") if isinstance(full_thread, dict) else None
-        if not isinstance(steps, list):
-            continue
+    steps = thread.get("steps") if isinstance(thread, dict) else None
+    messages: list[BaseMessage] = []
+    if isinstance(steps, list):
         for step in steps:
-            if not isinstance(step, dict):
-                continue
-            converted = _step_to_message(step)
-            if converted:
-                collected.append(converted)
-
-    collected.sort(key=lambda item: item[0])
-    return [message for _, message in collected]
+            if isinstance(step, dict):
+                msg = _step_to_message(step)
+                if msg:
+                    messages.append(msg)
+    return messages
 
 
-def _resolve_thread_id() -> Optional[str]:
-    if cl_context is not None:
+def _overwrite_memory(memory: ConversationBufferMemory, messages: Sequence[BaseMessage]) -> None:
+    chat_memory = getattr(memory, "chat_memory", None)
+    if chat_memory is None:
+        return
+    if hasattr(chat_memory, "messages"):
+        chat_memory.messages = []
+    if hasattr(chat_memory, "clear"):
         try:
-            thread_id = getattr(cl_context.session, "thread_id", None)
-            if isinstance(thread_id, str):
-                return thread_id
+            chat_memory.clear()
         except Exception:
             pass
-    if get_current_context:
-        ctx = get_current_context()
-        if ctx is not None:
-            thread = getattr(ctx, "thread", None)
-            if thread is not None and getattr(thread, "id", None):
-                return thread.id  # type: ignore[attr-defined]
-            ctx_thread_id = getattr(ctx, "thread_id", None)
-            if isinstance(ctx_thread_id, str):
-                return ctx_thread_id
-    thread_id = cl.user_session.get("thread_id")
-    if isinstance(thread_id, str):
-        return thread_id
-    return None
+    for message in messages:
+        try:
+            chat_memory.add_message(message)
+        except AttributeError:
+            if hasattr(chat_memory, "messages"):
+                chat_memory.messages.append(message)
 
 
-def _current_session_identifier() -> str:
-    user = cl.user_session.get("user")
-    base_id = user.identifier if user else "anonymous"
+async def _ensure_memory(scope: str) -> ConversationBufferMemory:
+    owner = _user_identifier()
     thread_id = _resolve_thread_id()
-    if PERSISTED_SCOPE:
-        return base_id
-    return f"{base_id}:{thread_id}" if thread_id else base_id
-
-
-def _get_or_create_memory(session_id: str) -> ConversationBufferMemory:
+    session_key = _memory_session_key(scope, owner, thread_id)
     memory: Optional[ConversationBufferMemory] = cl.user_session.get("memory")
-    current_session = cl.user_session.get("memory_session_id")
-    if memory is None or current_session != session_id:
-        memory = build_memory(session_id)
+    active_key: Optional[str] = cl.user_session.get("memory_session_id")
+    if memory is None or active_key != session_key:
+        memory = _build_memory(scope, owner, thread_id)
         cl.user_session.set("memory", memory)
-        cl.user_session.set("memory_session_id", session_id)
+        cl.user_session.set("memory_session_id", session_key)
+    if scope == "conversation":
+        if not memory.chat_memory.messages and thread_id:
+            history = await _load_thread_messages(thread_id)
+            if history:
+                _overwrite_memory(memory, history)
+    else:
+        memory.load_memory_variables({})
     return memory
+
+
+def _parse_scope_command(content: str) -> Optional[str]:
+    lowered = content.strip().lower()
+    if not lowered.startswith(SCOPE_COMMAND_PREFIX):
+        return None
+    desired = lowered[len(SCOPE_COMMAND_PREFIX) :].strip()
+    if desired in HISTORY_OPTIONS:
+        return desired
+    return ""
+
+
+async def _stream_response(text: str, structured: dict) -> None:
+    author = structured.get("output", "Supervisor") if structured else "Supervisor"
+    metadata = {"structured": structured} if structured else None
+    message = cl.Message(content="", author=author, metadata=metadata)
+    await message.send()
+    chunks = _chunk_text(text) or [""]
+    for chunk in chunks:
+        await message.stream_token(chunk)
+    message.content = text
+    await message.update()
 
 
 @cl.password_auth_callback
@@ -203,61 +207,54 @@ def auth_callback(username: str, password: str):
 
 @cl.on_chat_start
 async def on_chat_start():
-    session_id = _current_session_identifier()
-    _get_or_create_memory(session_id)
+    scope = _current_scope()
+    await _ensure_memory(scope)
+    notice = (
+        "Type `scope: conversation` to limit context to this chat or `scope: user` to reuse all your past chats."
+    )
+    await cl.Message(content=f"History scope set to `{scope}`.\n{notice}").send()
 
-USE_MODEL = os.getenv("USE_MODEL", "mistral-ollama")
-llm = llm_from(USE_MODEL)
 
-@cl.on_message
-async def main(message: cl.Message):
-    session_id = _current_session_identifier()
-    memory = _get_or_create_memory(session_id)
-
-    user_obj = cl.user_session.get("user")
-    user_identifier = getattr(user_obj, "identifier", "anonymous")
-
-    if MEMORY_SCOPE == "conversation":
-        history_messages = list(memory.load_memory_variables({}).get("history", []))
-    else:
-        history_messages = list(await _load_user_message_history(user_identifier))
-
-    if history_messages and isinstance(history_messages[-1], HumanMessage) and history_messages[-1].content == message.content:
-        conversation = history_messages
-    else:
-        conversation = history_messages + [HumanMessage(content=message.content)]
-
-    msg = await cl.Message(content="").send()
-    response_chunks: list[str] = []
-
-    async for chunk in llm.astream(conversation):
-        token = chunk.content or ""
-        if token:
-            response_chunks.append(token)
-            await msg.stream_token(token)
-
-    await msg.update()
-
-    memory.save_context({"input": message.content}, {"output": "".join(response_chunks)})
 @cl.on_chat_resume
 async def on_chat_resume(thread: dict):
-    # 1) bind the chosen thread to this live session
     thread_id = thread.get("id")
     if isinstance(thread_id, str):
         cl.user_session.set("thread_id", thread_id)
+    scope = _current_scope()
+    if scope == "conversation" and isinstance(thread_id, str):
+        memory = await _ensure_memory(scope)
+        history = await _load_thread_messages(thread_id)
+        if history:
+            _overwrite_memory(memory, history)
 
-    # 2) (re)build memory for this thread
-    session_id = _current_session_identifier()  # will now include this thread id if MEMORY_SCOPE=="conversation"
-    memory = _get_or_create_memory(session_id)
 
-    # 3) seed memory with that thread’s messages
-    msgs = await _load_thread_messages(thread_id)
-    # clear old memory and load this thread history
-    try:
-        # LangChain ConversationBufferMemory API
-        memory.chat_memory.messages = []
-    except Exception:
-        pass
-    for m in msgs:
-        memory.chat_memory.add_message(m)
+@cl.on_message
+async def main(message: cl.Message):
+    scope = _current_scope()
+    requested_scope = _parse_scope_command(message.content)
+    if requested_scope is not None:
+        if requested_scope:
+            cl.user_session.set("history_scope", requested_scope)
+            await _ensure_memory(requested_scope)
+            await cl.Message(content=f"History scope switched to `{requested_scope}`.").send()
+        else:
+            options = ", ".join(sorted(HISTORY_OPTIONS))
+            await cl.Message(content=f"Invalid scope. Choose one of: {options}.").send()
+        return
 
+    memory = await _ensure_memory(scope)
+    history_messages = list(_history_from_memory(memory))
+
+    supervisor = await cl.make_async(run_supervisor)(
+        message.content,
+        history=history_messages,
+        log=True,
+    )
+    if supervisor is None:
+        await cl.Message(content="Sorry, I couldn't generate a response.").send()
+        return
+
+    structured = supervisor.additional_kwargs.get("structured", {})
+    response_text = structured.get("content") or supervisor.content or ""
+    await _stream_response(response_text, structured)
+    memory.save_context({"input": message.content}, {"output": response_text})

@@ -1,22 +1,31 @@
-from langchain_ollama import ChatOllama
-from langchain_mistralai import ChatMistralAI
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
+from langchain_aws.chat_models.bedrock import ChatBedrock
+from langchain_mistralai import ChatMistralAI
+from langchain_ollama import ChatOllama
+
+PROVIDER_LIST=["aws","mistral","ollama"]
+AWS_MODEL_LIST=["anthropic.claude-3-haiku-20240307-v1:0",
+                "anthropic.claude-3-5-sonnet-20241022-v2:0"]
 
 load_dotenv()
+PROVIDER = os.getenv("USE_PROVIDER", "aws")
+MODEL_NAME = os.getenv("USE_MODEL", "anthropic.claude-3-5-sonnet-20241022-v2:0")
 
-def llm_from(provider=None):
-    "choose provider from mistral-cloud (using public API) key or local model (ollama)"
-    if provider == "mistral-cloud":
-        cloud_model = os.getenv("MISTRAL_CLOUD_MODEL")
+def llm_from(provider=PROVIDER,model_name=MODEL_NAME):
+    """Initialize and return a language model based on the specified provider and model name.
+    providers should be one of "aws", "mistral" or "ollama"."""
+    if provider not in PROVIDER_LIST:
+        raise ValueError("choose from \"aws\", \"mistral\" or \"ollama\"")
+    if provider == "aws":
+
+        return ChatBedrock(model_id=model_name, region="us-west-2", temperature=0)
+    if provider == "mistral":
         api_key = os.getenv("MISTRAL_API_KEY")
         return ChatMistralAI(
-            model=cloud_model,
-            api_key=api_key
+            model=model_name,
+            api_key=api_key,
+            temperature=0
         )
-    
-    if provider == "mistral-ollama":
-        local_model = os.getenv("MISTRAL_LOCAL_MODEL")
-        return ChatOllama(model=local_model)
-    
-    raise ValueError("choose from \"mistral-cloud\" or \"mistral-ollama\"")
+    if provider == "ollama":
+        return ChatOllama(model=model_name, temperature=0)
