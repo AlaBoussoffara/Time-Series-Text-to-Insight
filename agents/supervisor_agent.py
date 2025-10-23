@@ -1,44 +1,33 @@
 from pathlib import Path
-from typing import Annotated, Literal, Optional, Sequence, TypedDict
-
+from typing import Optional, Sequence
 import dotenv
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
-from langgraph.graph.message import add_messages
-from pydantic import BaseModel, Field
-from sql_agent import create_sql_agent 
+from agents.sql_agent import create_sql_agent 
 from llm import llm_from 
+from utils.states import OverallState
+from utils.output_basemodels import SupervisorOutput
+
 dotenv.load_dotenv()
-
-PROMPT_PATH = Path("supervisor_prompt.txt")
-SUPERVISOR_PROMPT_TEXT = PROMPT_PATH.read_text(encoding="utf-8")
-
-
-class Step(BaseModel):
-    output: Literal["plan", "thought", "final_answer", "SQL Agent", "Analysis Agent", "Visualization Agent"] = Field(
-        ..., description="Either 'plan', 'thought', 'final_answer', or an agent name."
-    )
-    content: str = Field(..., description="content for the chosen output.")
-
-
-class OverallState(TypedDict):
-    messages: Annotated[list[AnyMessage], add_messages]
-    datastore: dict
-
-def _system_prompt() -> SystemMessage:
-    return SystemMessage(SUPERVISOR_PROMPT_TEXT)
-
 
 def build_supervisor_graph() -> StateGraph:
     """Build and compile the supervisor graph using the Haiku model."""
-    llm_supervisor = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0").with_structured_output(Step)
-    llm_sql = create_sql_agent(llm_from())
+    
+    supervisor_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0").with_structured_output(SupervisorOutput)
+    
+    sql_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
+    #analysis_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
+    #visualization_llm = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0")
+    
+    sql_agent = create_sql_agent(sql_llm)
+    #analysis_agent = create_analysis_agent(analysis_llm)
+    #visualization_agent = create_visualization_agent(visualization_llm)
     
     def supervisor_node(state: OverallState) -> OverallState:
-        step = llm_supervisor.invoke(state["messages"])
+        answer = supervisor_llm.invoke(state["messages"])
         ai_msg = AIMessage(
-            content=step.model_dump_json(),
-            additional_kwargs={"structured": step.model_dump()},
+            content=answer.model_dump_json(),
+            additional_kwargs={"structured": answer.model_dump()},
             name="Supervisor",
         )
         return {"messages": [ai_msg]}
@@ -47,12 +36,28 @@ def build_supervisor_graph() -> StateGraph:
         last_message = state["messages"][-1]
         if isinstance(last_message, AIMessage):
             structured = last_message.additional_kwargs.get("structured", {})
-            return structured.get("output", "thought")
+            output = structured.get("output", "thought")
+            if output in {"hallucination", "no_hallucination"}:
+                return output
+            return output
         return "thought"
 
     def sql_agent_node(state: OverallState) -> OverallState:
-        res = llm_sql.invoke({"question": state["messages"][-1].additional_kwargs["structured"]["content"]})
-        return {"datastore": {res["reference_key"]:{"description": res["description"],"data":res["query_result"]}},"messages":[AIMessage(content="tache réussie, il y a un capteur avec 43 enregistrements", name="SQL Agent")]}
+        res = sql_agent.invoke({"question": state["messages"][-1].additional_kwargs["structured"]["content"]})
+        answer = res.get("answer", "SQL agent completed the task.")
+        reference_key = res.get("reference_key")
+        description = res.get("description", "")
+        query_result = res.get("query_result", [])
+        datastore_update = {}
+        if reference_key:
+            datastore_update[reference_key] = {
+                "description": description,
+                "data": query_result,
+            }
+        return {
+            "datastore": datastore_update,
+            "messages": [AIMessage(content=answer, name="SQL Agent")],
+        }
 
     def analysis_agent_node(state: OverallState) -> OverallState:
         ai_msg = AIMessage(content="Data analysis completed successfully.", name="Analysis Agent")
@@ -76,9 +81,11 @@ def build_supervisor_graph() -> StateGraph:
             "SQL Agent": "SQLAgent",
             "Analysis Agent": "AnalysisAgent",
             "Visualization Agent": "VisualizationAgent",
-            "final_answer": END,
+            "final_answer": "supervisor",
             "thought": "supervisor",
             "plan": "supervisor",
+            "hallucination": "supervisor",
+            "no_hallucination": END,
         },
     )
     builder.add_edge("SQLAgent", "supervisor")
@@ -87,24 +94,21 @@ def build_supervisor_graph() -> StateGraph:
     return builder.compile()
 
 
-def _format_message(message: BaseMessage) -> tuple[str, str]:
-    if isinstance(message, SystemMessage):
-        return "System", message.content
-    if isinstance(message, HumanMessage):
-        label = message.name or "User"
-        return label, message.content
+def _format_message(message: BaseMessage) -> tuple[Optional[str], str]:
+    """Return a label/content pair"""
+    content = getattr(message, "content", "")
     if isinstance(message, AIMessage):
         structured = message.additional_kwargs.get("structured")
-        if structured:
-            label = structured.get("output", message.name or "Supervisor")
-            content = structured.get("content", message.content)
-        else:
-            label = message.name or "Agent"
-            content = message.content
-        return label, content
-    label = getattr(message, "name", getattr(message, "type", message.__class__.__name__))
-    content = getattr(message, "content", "")
-    return label, content
+        if message.name == "Supervisor" or structured:
+            label = ""
+            if structured:
+                label = structured.get("output") or ""
+                content = structured.get("content", content)
+            if not label:
+                label = message.name or getattr(message, "type", message.__class__.__name__)
+            return label, content
+        return None, content
+    return None, content
 
 
 def _stream_graph(compiled_graph, state, *, log: bool = True) -> list[AnyMessage]:
@@ -125,8 +129,11 @@ def _stream_graph(compiled_graph, state, *, log: bool = True) -> list[AnyMessage
                 collected_messages.append(message)
                 if log:
                     label, content = _format_message(message)
-                    print(f"[{node}] {label}: {content}")
-    return final_messages or collected_messages
+                    if label:
+                        print(f"[{node}] {label}: {content}")
+                    else:
+                        print(f"[{node}] {content}")
+    return collected_messages
 
 
 def run_supervisor(
@@ -137,7 +144,10 @@ def run_supervisor(
 ):
     """Execute the supervisor graph and return the final message."""
     compiled_graph = build_supervisor_graph()
-    messages: list[AnyMessage] = [_system_prompt()]
+    SUPERVISOR_PROMPT_TEXT = Path("prompts/supervisor_prompt.txt"
+                                  ).read_text(encoding="utf-8")
+
+    messages: list[AnyMessage] = [SystemMessage(SUPERVISOR_PROMPT_TEXT)]
     if history:
         for msg in history:
             if isinstance(msg, BaseMessage):
@@ -145,13 +155,18 @@ def run_supervisor(
     messages.append(HumanMessage(user_input))
     state = {"messages": messages}
 
-    if log:
-        final_messages = _stream_graph(compiled_graph, state, log=log)
-    else:
-        result = compiled_graph.invoke(state)
-        final_messages = result["messages"]
+    final_messages = _stream_graph(compiled_graph, state, log=log)
 
-    return final_messages[-1] if final_messages else None
+    if not final_messages:
+        return None
+
+    for message in reversed(final_messages):
+        if isinstance(message, AIMessage):
+            structured = message.additional_kwargs.get("structured", {})
+            if structured.get("output") == "final_answer":
+                return message
+
+    return final_messages[-1]
 
 
 if __name__ == "__main__":
@@ -162,4 +177,7 @@ if __name__ == "__main__":
     final_message = run_supervisor(sample_input, log=True)
     if final_message:
         label, content = _format_message(final_message)
-        print(f"Final message ({label}): {content}")
+        if label:
+            print(f"Final message ({label}): {content}")
+        else:
+            print(f"Final message: {content}")
