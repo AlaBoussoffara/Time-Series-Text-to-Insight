@@ -3,28 +3,23 @@ from pathlib import Path
 from langgraph.graph import END, START, StateGraph
 
 from utils.output_basemodels import SQLAgentOutput
-from utils.sql_utils import create_test_database, execute_sql_tool, get_db_schema
+from utils.sql_utils import connect_postgres, execute_sql_tool
 from utils.states import SQLState
 
 PROMPT_PATH = Path("prompts/sql_agent_prompt.txt")
 SQL_AGENT_PROMPT_TEXT = PROMPT_PATH.read_text(encoding="utf-8")
+DATABASE_PROMPT_PATH = Path("prompts/database_prompt.txt")
+DATABASE_CONTEXT = DATABASE_PROMPT_PATH.read_text(encoding="utf-8")
 
 
 def create_sql_agent(llm):
 
-    def retrieve_schema_node(state: SQLState):
-        """Fetch the database schema and attach it to the state."""
-        print("--- 🧠 STEP: Retrieve database schema ---")
-        state['db_schema'] = get_db_schema(conn)
-        return state
-  
     def generate_sql_and_summary_node(state: SQLState):
         """Generate the SQL query plus reference, description, and summary in one pass."""
         print("--- 🧠 STEP: Generate SQL and summary ---")
         question = state['question']
-        db_schema = state['db_schema']
 
-        system_prompt = SQL_AGENT_PROMPT_TEXT.replace("{db_schema}", db_schema)
+        system_prompt = SQL_AGENT_PROMPT_TEXT.replace("{database_context}", DATABASE_CONTEXT)
         structured_llm = llm.with_structured_output(SQLAgentOutput)
         try:
             response = structured_llm.invoke([
@@ -95,18 +90,21 @@ def create_sql_agent(llm):
 
 
     DATASTORE={}
-    conn = create_test_database()
+    try:
+        conn = connect_postgres()
+    except Exception as exc:
+        raise RuntimeError(
+            "Failed to connect to PostgreSQL. Ensure POSTGRES_DSN is set and reachable."
+        ) from exc
 
 
     workflow = StateGraph(SQLState)
 
-    workflow.add_node("retrieve_schema", retrieve_schema_node)
     workflow.add_node("generate_sql_and_summary", generate_sql_and_summary_node)
     workflow.add_node("execute_sql",execute_sql_node)
     workflow.add_node("save_to_datastore", save_to_datastore_node)
 
-    workflow.add_edge(START, "retrieve_schema")
-    workflow.add_edge("retrieve_schema", "generate_sql_and_summary")
+    workflow.add_edge(START, "generate_sql_and_summary")
     workflow.add_edge("generate_sql_and_summary","execute_sql")
     workflow.add_edge("execute_sql", "save_to_datastore")
     workflow.add_edge("save_to_datastore", END)

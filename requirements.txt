@@ -1,5 +1,6 @@
 chainlit
 langchain
+langchain-core
 langgraph
 plotly
 langchain-ollama
@@ -7,3 +8,7 @@ langchain-mistralai
 langchain-community
 langgraph_supervisor
 langchain-aws
+psycopg[binary]
+pandas
+pydantic
+python-dotenv
