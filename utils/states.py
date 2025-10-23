@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Dict, Any, Annotated
+from typing import Annotated, Any, Dict, List, Optional, TypedDict
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
@@ -7,6 +7,8 @@ class OverallState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     datastore: dict
     database_schema: dict
+
+
 
 class SQLState(TypedDict, total=False):
     """
@@ -36,3 +38,19 @@ class SQLState(TypedDict, total=False):
     description: str
     query_result: List[Any]
     error_message: str
+
+
+AnalysisDatastore = Dict[str, Dict[str, Any]]
+
+
+class AnalysisState(TypedDict, total=False):
+    """State passed through the analysis workflow."""
+
+    question: str
+    datastore: AnalysisDatastore
+    datastore_summary: str
+    referenced_keys: List[str]
+    answer: str
+    insights: List[str]
+    follow_up_questions: List[str]
+    error_message: Optional[str]

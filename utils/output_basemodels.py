@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import List, Literal
 from pydantic import BaseModel, Field
 
 
@@ -48,4 +48,25 @@ class SQLAgentOutput(BaseModel):
     description: str | None = Field(
         default=None,
         description="Datastore description to use when output == 'persist_dataset'.",
+    )
+
+
+class AnalysisAgentOutput(BaseModel):
+    """Structured response produced by the analysis agent."""
+
+    answer: str = Field(
+        ...,
+        description="Narrative summary that references datastore keys, row counts, and caveats.",
+    )
+    insights: List[str] = Field(
+        default_factory=list,
+        description="Bullet-style insights derived from the provided data.",
+    )
+    follow_up_questions: List[str] = Field(
+        default_factory=list,
+        description="Suggested next questions or actions for the supervisor.",
+    )
+    referenced_keys: List[str] = Field(
+        default_factory=list,
+        description="Datastore keys that were essential for the analysis.",
     )

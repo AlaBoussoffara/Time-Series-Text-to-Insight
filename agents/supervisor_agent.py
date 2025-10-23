@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 import dotenv
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
+from agents.analysis_agent import create_analysis_agent
 from agents.sql_agent import create_sql_agent 
 from utils.llm import llm_from 
 from utils.states import OverallState
@@ -16,11 +17,11 @@ def build_supervisor_graph() -> StateGraph:
     supervisor_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0").with_structured_output(SupervisorOutput)
     
     sql_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
-    #analysis_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
+    analysis_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
     #visualization_llm = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0")
     
     sql_agent = create_sql_agent(sql_llm)
-    #analysis_agent = create_analysis_agent(analysis_llm)
+    analysis_agent = create_analysis_agent(analysis_llm)
     #visualization_agent = create_visualization_agent(visualization_llm)
     
     def supervisor_node(state: OverallState) -> OverallState:
@@ -53,8 +54,64 @@ def build_supervisor_graph() -> StateGraph:
         }
 
     def analysis_agent_node(state: OverallState) -> OverallState:
-        ai_msg = AIMessage(content="Data analysis completed successfully.", name="Analysis Agent")
-        return {"messages": [ai_msg]}
+        last_message = state["messages"][-1]
+        question = getattr(last_message, "content", "")
+        if isinstance(last_message, AIMessage):
+            structured = last_message.additional_kwargs.get("structured", {})
+            question = structured.get("content", question)
+
+        datastore = dict(state.get("datastore", {}))
+        print("--------QUESTION", question)
+        print("--------DATASTORE: ", datastore)
+        try:
+            analysis_state = analysis_agent.invoke(
+                {
+                    "question": question,
+                    "datastore": datastore,
+                }
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            error_payload = {
+                "output": "analysis_error",
+                "error_message": str(exc),
+            }
+            ai_msg = AIMessage(
+                content=f"Analysis failed: {exc}",
+                name="Analysis Agent",
+                additional_kwargs={"structured": error_payload},
+            )
+            return {"messages": [ai_msg], "datastore": datastore}
+
+        answer = analysis_state.get("answer") or "Analysis agent completed the task."
+        insights = analysis_state.get("insights", [])
+        follow_ups = analysis_state.get("follow_up_questions", [])
+        referenced_keys = analysis_state.get("referenced_keys", [])
+        error_message = analysis_state.get("error_message")
+
+        sections: list[str] = [answer]
+        if insights:
+            sections.append("Insights:\n" + "\n".join(f"- {item}" for item in insights))
+        if follow_ups:
+            sections.append("Follow-up suggestions:\n" + "\n".join(f"- {item}" for item in follow_ups))
+        if error_message:
+            sections.append(f"Warning: {error_message}")
+        content = "\n\n".join(sections)
+
+        structured_payload = {
+            "output": "analysis_result",
+            "answer": answer,
+            "insights": insights,
+            "follow_up_questions": follow_ups,
+            "referenced_keys": referenced_keys,
+            "error_message": error_message,
+        }
+
+        ai_msg = AIMessage(
+            content=content,
+            name="Analysis Agent",
+            additional_kwargs={"structured": structured_payload},
+        )
+        return {"messages": [ai_msg], "datastore": datastore}
 
     def visualization_agent_node(state: OverallState) -> OverallState:
         ai_msg = AIMessage(content="Visualization created successfully.", name="Visualization Agent")
@@ -146,7 +203,11 @@ def run_supervisor(
             if isinstance(msg, BaseMessage):
                 messages.append(msg)
     messages.append(HumanMessage(user_input))
-    state = {"messages": messages}
+    state = {
+        "messages": messages,
+        "datastore": {},
+        "database_schema": {},
+    }
 
     final_messages = _stream_graph(compiled_graph, state, log=log)
 

@@ -151,7 +151,11 @@ def create_sql_agent(llm):
         datastore_ref: str | None = None
         if persisted:
             df = pd.DataFrame(rows)
-            datastore_ref = datastore.put_df(df, namespace="sql_agent")
+            datastore_ref = datastore.put(
+                df,
+                namespace="sql_agent",
+                description=description,
+            )
 
         datastore_updates = dict(state.get("datastore_updates", {}))
         if reference_key:
