@@ -43,17 +43,10 @@ def build_supervisor_graph() -> StateGraph:
         return "thought"
 
     def sql_agent_node(state: OverallState) -> OverallState:
-        res = sql_agent.invoke({"question": state["messages"][-1].additional_kwargs["structured"]["content"]})
-        answer = res.get("answer", "SQL agent completed the task.")
-        reference_key = res.get("reference_key")
-        description = res.get("description", "")
-        query_result = res.get("query_result", [])
-        datastore_update = {}
-        if reference_key:
-            datastore_update[reference_key] = {
-                "description": description,
-                "data": query_result,
-            }
+        command = state["messages"][-1].additional_kwargs["structured"]["content"]
+        res = sql_agent.invoke({"command": command})
+        answer = res.get("final_answer") or "SQL agent completed the task."
+        datastore_update = res.get("datastore", {})
         return {
             "datastore": datastore_update,
             "messages": [AIMessage(content=answer, name="SQL Agent")],

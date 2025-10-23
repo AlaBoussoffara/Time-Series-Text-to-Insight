@@ -20,8 +20,32 @@ class SupervisorOutput(BaseModel):
 
 
 class SQLAgentOutput(BaseModel):
-    """Structured response from the SQL agent."""
-    sql_query: str = Field(description="Executable SQL query (no markdown fences or commentary) that answers the question.")
-    reference_key: str = Field(description="Snake_case identifier used to store the query result, e.g. sensor_summary_001.")
-    description: str = Field(description="Readable description of what the stored data represents in the datastore.")
-    answer: str = Field(description="English summary that enumerates the actions taken (schema review, SQL generation, execution, datastore save) and specifies the data provided to the supervisor.")
+    """
+    Structured response for the minimal SQL controller loop.
+    """
+
+    output: Literal[
+        "plan",
+        "thought",
+        "execute_sql",
+        "persist_dataset",
+        "final_answer",
+        "hallucination",
+        "no_hallucination",
+    ] = Field(
+        ...,
+        description="Control signal emitted by the SQL controller.",
+    )
+    content: str = Field(..., description="Reasoning or instruction associated with the current step.")
+    sql_query: str | None = Field(
+        default=None,
+        description="SQL to run when output == 'execute_sql'.",
+    )
+    reference_key: str | None = Field(
+        default=None,
+        description="Datastore key to use when output == 'persist_dataset'.",
+    )
+    description: str | None = Field(
+        default=None,
+        description="Datastore description to use when output == 'persist_dataset'.",
+    )
