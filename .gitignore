@@ -32,3 +32,6 @@ Thumbs.db
 # Logs & notebooks
 *.log
 .ipynb_checkpoints/
+
+#database
+database
