@@ -55,6 +55,7 @@ def create_sql_agent(llm):
         """Execute the SQL query and capture the result or error."""
         print("--- 🧠 STEP: Execute SQL query ---")
         sql_query = state['sql_query']
+        print("Generated SQL Query:", sql_query)
 
         if not sql_query:
             print("--- ⚠️ WARNING: No SQL query was generated. Skipping execution. ---")

@@ -3,8 +3,9 @@ from typing import Optional, Sequence
 import dotenv
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
-from agents.sql_agent import create_sql_agent 
-from llm import llm_from 
+from agents.analysis_agent import create_analysis_agent
+from agents.sql_agent import create_sql_agent
+from llm import llm_from
 from utils.states import OverallState
 from utils.output_basemodels import SupervisorOutput
 
@@ -16,11 +17,11 @@ def build_supervisor_graph() -> StateGraph:
     supervisor_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0").with_structured_output(SupervisorOutput)
     
     sql_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
-    #analysis_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
+    analysis_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
     #visualization_llm = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0")
     
     sql_agent = create_sql_agent(sql_llm)
-    #analysis_agent = create_analysis_agent(analysis_llm)
+    analysis_agent = create_analysis_agent(analysis_llm)
     #visualization_agent = create_visualization_agent(visualization_llm)
     
     def supervisor_node(state: OverallState) -> OverallState:
@@ -47,21 +48,78 @@ def build_supervisor_graph() -> StateGraph:
         answer = res.get("answer", "SQL agent completed the task.")
         reference_key = res.get("reference_key")
         description = res.get("description", "")
-        query_result = res.get("query_result", [])
+        query_result = res.get("query_result", [1,2.5,3.3,5.3])
+        print("ANSWER:", answer)
+        print("REFERENCE KEY:", reference_key)
+        print("DESCRIPTION:", description)
+        print("QUERY RESULT:", query_result)
         datastore_update = {}
         if reference_key:
             datastore_update[reference_key] = {
                 "description": description,
                 "data": query_result,
             }
+        print(datastore_update)
         return {
             "datastore": datastore_update,
             "messages": [AIMessage(content=answer, name="SQL Agent")],
         }
 
     def analysis_agent_node(state: OverallState) -> OverallState:
-        ai_msg = AIMessage(content="Data analysis completed successfully.", name="Analysis Agent")
-        return {"messages": [ai_msg]}
+        last_message = state["messages"][-1] if state.get("messages") else None
+        question = ""
+        if isinstance(last_message, AIMessage):
+            structured = last_message.additional_kwargs.get("structured", {})
+            question = structured.get("content", "") or ""
+        if not question and last_message is not None:
+            question = getattr(last_message, "content", "") or ""
+
+        datastore_snapshot = state.get("datastore") or {}
+
+        res = analysis_agent.invoke(
+            {
+                "question": question,
+                "datastore": datastore_snapshot if isinstance(datastore_snapshot, dict) else {},
+            }
+        ) or {}
+
+        error_message = res.get("error_message")
+        answer = res.get("answer") or ""
+        insights = res.get("insights") or []
+        follow_up_questions = res.get("follow_up_questions") or []
+        referenced_keys = res.get("referenced_keys") or []
+
+        message_sections = []
+        if answer:
+            message_sections.append(answer)
+        if insights:
+            message_sections.append("Key insights:")
+            message_sections.extend(f"- {insight}" for insight in insights)
+        if follow_up_questions:
+            message_sections.append("Follow-ups:")
+            message_sections.extend(f"- {item}" for item in follow_up_questions)
+        if error_message and not answer:
+            message_sections.append(f"Analysis agent encountered an issue: {error_message}")
+
+        response_text = "\n".join(filter(None, message_sections)) or "Analysis agent could not produce insights."
+
+        ai_msg = AIMessage(
+            content=response_text,
+            name="Analysis Agent",
+            additional_kwargs={
+                "referenced_keys": referenced_keys,
+                "insights": insights,
+                "follow_up_questions": follow_up_questions,
+                "error_message": error_message,
+            },
+        )
+
+        next_datastore_state = datastore_snapshot if isinstance(datastore_snapshot, dict) else {}
+
+        return {
+            "datastore": next_datastore_state,
+            "messages": [ai_msg],
+        }
 
     def visualization_agent_node(state: OverallState) -> OverallState:
         ai_msg = AIMessage(content="Visualization created successfully.", name="Visualization Agent")

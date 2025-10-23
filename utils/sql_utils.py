@@ -1,11 +1,12 @@
 import sqlite3
-
+import random
+from datetime import datetime, timedelta
 
 def create_test_database():
     conn = sqlite3.connect(':memory:')
     cursor = conn.cursor()
 
-    # Créer des tables de démo
+    # Créer les tables
     cursor.execute("""
     CREATE TABLE sensors (
         id TEXT PRIMARY KEY,
@@ -22,7 +23,27 @@ def create_test_database():
     );
     """)
     conn.commit()
+
+    # === Insérer deux capteurs ===
+    cursor.execute("INSERT INTO sensors (id, location, type) VALUES (?, ?, ?)", 
+                   ("sensor_1", "Living Room", "temperature"))
+    cursor.execute("INSERT INTO sensors (id, location, type) VALUES (?, ?, ?)", 
+                   ("sensor_2", "Kitchen", "humidity"))
+
+    # === Générer des valeurs aléatoires ===
+    now = datetime.now()
+    for i in range(10):  # 10 lectures par capteur
+        ts = now - timedelta(minutes=i*5)  # toutes les 5 minutes
+        val1 = round(random.uniform(18, 25), 2)  # temp en °C
+        val2 = round(random.uniform(30, 60), 2)  # humidité en %
+        cursor.execute("INSERT INTO sensor_readings (timestamp, sensor_id, value) VALUES (?, ?, ?)", 
+                       (ts, "S1", val1))
+        cursor.execute("INSERT INTO sensor_readings (timestamp, sensor_id, value) VALUES (?, ?, ?)", 
+                       (ts, "S2", val2))
+
+    conn.commit()
     return conn
+
 
 def get_db_schema(connexion):
     """Récupère le schéma de la base de données (instructions CREATE)."""
@@ -45,8 +66,15 @@ def execute_sql_tool(connexion, sql_query: str):
         cursor.execute(sql_query)
         result = cursor.fetchall()
         connexion.commit()
+        
         return result
     except sqlite3.Error as e:
-        # En cas d'erreur, nous retournons le message d'erreur.
-        # Cela sera utile plus tard pour l'auto-correction.
         return f"Erreur d'exécution SQL: {e}"
+
+
+# === Exemple d'utilisation ===
+if __name__ == "__main__":
+    conn = create_test_database()
+    print(get_db_schema(conn))
+    print(execute_sql_tool(conn, "SELECT * FROM sensors;"))
+    print(execute_sql_tool(conn, "SELECT * FROM sensor_readings LIMIT 5;"))
