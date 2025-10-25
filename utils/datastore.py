@@ -85,6 +85,20 @@ class DataStore:
             return {"items": len(self._store),
                     "namespaces": sorted({r.split("/")[0] for r in self._store})}
 
+    def snapshot(self) -> Dict[str, Dict[str, Any]]:
+        """Return lightweight metadata for all stored datasets."""
+        with self._lock:
+            snapshot: Dict[str, Dict[str, Any]] = {}
+            for ref, entry in self._store.items():
+                df = entry.get("df")
+                row_count = len(df) if isinstance(df, pd.DataFrame) else 0
+                snapshot[ref] = {
+                    "description": entry.get("description", ""),
+                    "row_count": row_count,
+                    "datastore_ref": ref,
+                }
+            return snapshot
+
     # ------------ internes ------------
     def _require(self, ref: str) -> Dict[str, Any]:
         e = self._store.get(ref)

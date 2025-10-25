@@ -75,7 +75,26 @@ def execute_sql_tool(conn: Any, query: str) -> Union[List[Dict[str, Any]], str]:
     return results
 
 
+def test_postgres_connection(dsn: Optional[str] = None) -> bool:
+    """
+    Return True when a PostgreSQL connection can be opened and responds to SELECT 1.
+    """
+    conn: Optional["Connection"] = None
+    try:
+        conn = connect_postgres(dsn)
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT 1;")
+            cursor.fetchone()
+        return True
+    except Exception:
+        return False
+    finally:
+        if conn is not None:
+            conn.close()
+
+
 __all__ = [
     "connect_postgres",
     "execute_sql_tool",
+    "test_postgres_connection",
 ]

@@ -3,10 +3,10 @@ from pydantic import BaseModel, Field
 
 
 class SupervisorOutput(BaseModel):
-    output: Literal[
+    output_type: Literal[
         "plan",
         "thought",
-        "final_answer",
+        "supervisor_final_answer",
         "hallucination",
         "no_hallucination",
         "SQL Agent",
@@ -14,9 +14,9 @@ class SupervisorOutput(BaseModel):
         "Visualization Agent",
     ] = Field(
         ...,
-        description="Supervisor control signal: planning/thinking steps, agent names, 'final_answer', or hallucination audit outputs.",
+        description="Supervisor control signal: planning/thinking steps, agent names, 'supervisor_final_answer', or hallucination audit outputs.",
     )
-    content: str = Field(..., description="Content corresponding to the chosen output.")
+    output_content: str = Field(..., description="Content corresponding to the chosen output.")
 
 
 class SQLAgentOutput(BaseModel):
@@ -24,37 +24,38 @@ class SQLAgentOutput(BaseModel):
     Structured response for the minimal SQL controller loop.
     """
 
-    output: Literal[
+    output_type: Literal[
         "plan",
         "thought",
+        "summarize_datastore_updates",
         "execute_sql",
         "persist_dataset",
-        "final_answer",
+        "sql_agent_final_answer",
         "hallucination",
         "no_hallucination",
     ] = Field(
         ...,
         description="Control signal emitted by the SQL controller.",
     )
-    content: str = Field(..., description="Reasoning or instruction associated with the current step.")
+    output_content: str = Field(..., description="Reasoning or instruction associated with the current step.")
     sql_query: str | None = Field(
         default=None,
-        description="SQL to run when output == 'execute_sql'.",
+        description="SQL to run when output_type == 'execute_sql'.",
     )
     reference_key: str | None = Field(
         default=None,
-        description="Datastore key to use when output == 'persist_dataset'.",
+        description="Datastore key to use when output_type == 'persist_dataset'.",
     )
     description: str | None = Field(
         default=None,
-        description="Datastore description to use when output == 'persist_dataset'.",
+        description="Datastore description to use when output_type == 'persist_dataset'.",
     )
 
 
 class AnalysisAgentOutput(BaseModel):
     """Structured response produced by the analysis agent."""
 
-    answer: str = Field(
+    analysis_agent_final_answer: str = Field(
         ...,
         description="Narrative summary that references datastore keys, row counts, and caveats.",
     )
@@ -70,3 +71,5 @@ class AnalysisAgentOutput(BaseModel):
         default_factory=list,
         description="Datastore keys that were essential for the analysis.",
     )
+
+__all__ = ["SupervisorOutput", "SQLAgentOutput", "AnalysisAgentOutput"]

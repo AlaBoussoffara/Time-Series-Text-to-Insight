@@ -320,7 +320,9 @@ class SQLiteDataLayer(BaseDataLayer):
         step_id = step.get("id") or str(uuid4())
         created_at = str(step.get("createdAt") or _utc_iso())
         content_preview = (
-            step.get("output")
+            step.get("output_content")
+            or step.get("output_type")
+            or step.get("output")
             or step.get("input")
             or step.get("name")
             or ""
@@ -596,4 +598,3 @@ class SQLiteDataLayer(BaseDataLayer):
 
     async def close(self) -> None:  # type: ignore[override]
         return None
-

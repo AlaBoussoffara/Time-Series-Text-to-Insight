@@ -3,9 +3,12 @@ from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
 
-class OverallState(TypedDict):
-    messages: Annotated[list[AnyMessage], add_messages]
-    datastore: dict
+class GlobalState(TypedDict):
+    global_messages_history: Annotated[list[AnyMessage], add_messages]
+    sql_agent_messages_history: Annotated[list[AnyMessage], add_messages]
+    analysis_agent_messages_history: Annotated[list[AnyMessage], add_messages]
+    visualization_agent_messages_history: Annotated[list[AnyMessage], add_messages]
+    datastore: Any
     database_schema: dict
 
 
@@ -16,28 +19,18 @@ class SQLState(TypedDict, total=False):
 
     Attributes:
         messages: Running conversation history between controller and tools.
-        command: Instruction received from the supervisor.
-        sql_queries: Ordered list of every SQL query executed (exploratory and final).
+        instruction: Instruction received from the supervisor.
+        query_log: Chronological record of executed SQL queries and their outcomes.
         datastore: Persistent datastore object shared across steps.
-        latest_payload: Result of the most recent SQL execution (rows and metadata).
-        datastore_updates: Cached view of persisted datasets keyed by reference.
-        last_persist: Details about the most recent persistence action.
-        final_answer: Text response prepared for the supervisor.
+        sql_agent_final_answer: Text response prepared for the supervisor.
     """
 
     messages: Annotated[List[AnyMessage], add_messages]
-    command: str
-    sql_queries: List[str]
+    instruction: str
+    query_log: List[Dict[str, Any]]
     datastore: Any
-    latest_payload: Dict[str, Any]
-    datastore_updates: Dict[str, Any]
-    last_persist: Dict[str, Any]
-    final_answer: str
-    answer: str
-    reference_key: str
-    description: str
-    query_result: List[Any]
-    error_message: str
+    sql_agent_final_answer: str
+
 
 
 AnalysisDatastore = Dict[str, Dict[str, Any]]
@@ -46,11 +39,12 @@ AnalysisDatastore = Dict[str, Dict[str, Any]]
 class AnalysisState(TypedDict, total=False):
     """State passed through the analysis workflow."""
 
-    question: str
-    datastore: AnalysisDatastore
+    instruction: str
+    datastore: Any
     datastore_summary: str
     referenced_keys: List[str]
-    answer: str
+    analysis_agent_final_answer: str
     insights: List[str]
     follow_up_questions: List[str]
     error_message: Optional[str]
+    datastore_obj: Any

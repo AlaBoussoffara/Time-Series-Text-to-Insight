@@ -13,6 +13,7 @@ from langchain_community.chat_message_histories import SQLChatMessageHistory
 
 from ui.datalayer import SQLiteDataLayer
 from agents.supervisor_agent import run_supervisor
+from utils.messages import AgentMessage
 
 try:  # Chainlit 1.0+
     from chainlit.data import get_data_layer
@@ -108,7 +109,13 @@ def _step_to_message(step: dict) -> Optional[BaseMessage]:
     step_type = step.get("type")
     if step_type not in {"user_message", "assistant_message"}:
         return None
-    content = step.get("output") or step.get("content") or step.get("input") or ""
+    content = (
+        step.get("output_content")
+        or step.get("content")
+        or step.get("output")
+        or step.get("input")
+        or ""
+    )
     if not isinstance(content, str) or not content.strip():
         return None
     if step_type == "user_message":
@@ -187,7 +194,7 @@ def _parse_scope_command(content: str) -> Optional[str]:
 
 
 async def _stream_response(text: str, structured: dict) -> None:
-    author = structured.get("output", "Supervisor") if structured else "Supervisor"
+    author = structured.get("output_type", "Supervisor") if structured else "Supervisor"
     metadata = {"structured": structured} if structured else None
     message = cl.Message(content="", author=author, metadata=metadata)
     await message.send()
@@ -254,7 +261,23 @@ async def main(message: cl.Message):
         await cl.Message(content="Sorry, I couldn't generate a response.").send()
         return
 
-    structured = supervisor.additional_kwargs.get("structured", {})
-    response_text = structured.get("content") or supervisor.content or ""
+    structured: dict = {}
+    if isinstance(supervisor, AgentMessage):
+        structured = dict(supervisor.structured_output)
+    else:
+        candidate = getattr(supervisor, "structured_output", None)
+        if isinstance(candidate, dict):
+            structured = dict(candidate)
+    if not structured:
+        structured = {
+            "output_type": getattr(supervisor, "output_type", None),
+            "output_content": getattr(supervisor, "output_content", None),
+        }
+    response_text = (
+        structured.get("output_content")
+        or getattr(supervisor, "output_content", None)
+        or getattr(supervisor, "content", "")
+        or ""
+    )
     await _stream_response(response_text, structured)
     memory.save_context({"input": message.content}, {"output": response_text})
