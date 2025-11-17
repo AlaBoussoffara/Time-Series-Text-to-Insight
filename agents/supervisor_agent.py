@@ -57,7 +57,51 @@ def build_supervisor_graph() -> StateGraph:
         return {"messages": [ai_msg]}
 
     def visualization_agent_node(state: OverallState) -> OverallState:
-        ai_msg = AIMessage(content="Visualization created successfully.", name="Visualization Agent")
+        # Récupère possible visualisation depuis le datastore ou le dernier message structuré
+        last_msg = state["messages"][-1]
+        structured = getattr(last_msg, "additional_kwargs", {}).get("structured", {}) if hasattr(last_msg, "additional_kwargs") else {}
+
+        vis = None
+        if state.get("datastore"):
+            for k, v in state["datastore"].items():
+                if isinstance(v, dict) and ("plot_html" in v or "plot_png_b64" in v or "plot_json" in v):
+                    vis = v
+                    break
+        if not vis:
+            vis = structured.get("visualization") or structured.get("plot") or None
+
+        # Prépare le contenu visible dans la conversation : priorité plot_html puis image base64
+        if vis:
+            plot_html = vis.get("plot_html")
+            plot_png_b64 = vis.get("plot_png_b64")
+            if plot_html:
+                content = plot_html  # fragment HTML Plotly (full_html=False idéal)
+            elif plot_png_b64:
+                content = f'<img src="data:image/png;base64,{plot_png_b64}" alt="visualisation"/>'
+            else:
+                content = "Visualization created successfully. (Aucun fragment HTML ou image trouvé — voir le rapport.)"
+
+            structured_out = {
+                "output": "final_answer",
+                "content": content,
+                "plot_html": plot_html,
+                "plot_png_b64": plot_png_b64,
+                "plot_json": vis.get("plot_json"),
+                "display_in_conversation": True,
+            }
+        else:
+            content = "Visualization created successfully. (Aucun contenu visuel trouvé dans le state.)"
+            structured_out = {
+                "output": "final_answer",
+                "content": content,
+                "display_in_conversation": False,
+            }
+
+        ai_msg = AIMessage(
+            content=content,
+            name="Visualization Agent",
+            additional_kwargs={"structured": structured_out},
+        )
         return {"messages": [ai_msg]}
 
     builder = StateGraph(OverallState)
@@ -144,8 +188,10 @@ def run_supervisor(
     state = {"messages": messages}
 
     if log:
+        # Stream events and print logs via _stream_graph
         final_messages = _stream_graph(compiled_graph, state, log=log)
     else:
+        # Invoke once and get the resulting messages
         result = compiled_graph.invoke(state)
         final_messages = result["messages"]
 

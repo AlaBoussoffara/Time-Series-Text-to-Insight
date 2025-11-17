@@ -254,7 +254,60 @@ async def main(message: cl.Message):
         await cl.Message(content="Sorry, I couldn't generate a response.").send()
         return
 
-    structured = supervisor.additional_kwargs.get("structured", {})
-    response_text = structured.get("content") or supervisor.content or ""
+    # Support: run_supervisor peut retourner une liste de messages, un BaseMessage ou None
+    if isinstance(supervisor, list):
+        supervisor_msg = supervisor[-1] if supervisor else None
+    else:
+        supervisor_msg = supervisor
+
+    if supervisor_msg is None:
+        await cl.Message(content="Sorry, I couldn't generate a response.").send()
+        return
+
+    # Extraire structured de manière robuste
+    additional = getattr(supervisor_msg, "additional_kwargs", {}) or {}
+    structured = additional.get("structured", {}) if isinstance(additional, dict) else {}
+    print("DEBUG structured:", structured)
+    response_text = structured.get("content") or getattr(supervisor_msg, "content", "") or ""
     await _stream_response(response_text, structured)
     memory.save_context({"input": message.content}, {"output": response_text})
+
+    # Si l'agent demande un affichage direct en conversation, tenter d'envoyer le HTML / image
+    try:
+        display = bool(structured.get("display_in_conversation"))
+    except Exception:
+        display = False
+
+    if display:
+        plot_html = structured.get("plot_html")
+        plot_png_b64 = structured.get("plot_png_b64")
+
+        # Essayer d'utiliser les éléments officiels Chainlit si présents
+        try:
+            from chainlit import elements as cl_elements  # type: ignore
+            Html = getattr(cl_elements, "Html", None)
+            Image = getattr(cl_elements, "Image", None)
+        except Exception:
+            Html = None
+            Image = None
+
+        if plot_html:
+            if Html is not None:
+                try:
+                    await Html(plot_html).send()
+                except Exception:
+                    await cl.Message(content=plot_html, author="Visualization").send()
+            else:
+                # Fallback : envoyer le fragment HTML en tant que message (peut être rendu selon config)
+                await cl.Message(content=plot_html, author="Visualization").send()
+        elif plot_png_b64:
+            if Image is not None:
+                try:
+                    await Image(base64=plot_png_b64).send()
+                except Exception:
+                    # Fallback : envoyer balise img base64 dans le message
+                    html_img = f'<img src="data:image/png;base64,{plot_png_b64}" alt="visualisation"/>'
+                    await cl.Message(content=html_img, author="Visualization").send()
+            else:
+                html_img = f'<img src="data:image/png;base64,{plot_png_b64}" alt="visualisation"/>'
+                await cl.Message(content=html_img, author="Visualization").send()
