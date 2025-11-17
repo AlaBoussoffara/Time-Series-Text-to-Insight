@@ -36,7 +36,7 @@ MISTRAL_API_KEY=          # required if USE_PROVIDER=mistral
    Adjust names/passwords to match your security requirements.
 
 3. **Expose the DSN**  
-   - Add `POSTGRES_DSN=postgresql://ts_user:strong_password@localhost:5432/ts_text_to_insight` to `.env`.  
+   - Add `POSTGRES_DSN=postgresql://ts_user:strong_password@localhost:5432/ts_text_to_insight` to `.env`.
    - Alternatively export it in your shell before running scripts:  
      `export POSTGRES_DSN=postgresql://ts_user:strong_password@localhost:5432/ts_text_to_insight`
 
@@ -60,7 +60,33 @@ MISTRAL_API_KEY=          # required if USE_PROVIDER=mistral
 [Install AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and confirm with `aws --version`.
 
 ## Run the App
-- Start Chainlit with `make run` (sets `PYTHONPATH` to the project root and runs `chainlit run ui/app.py -w` so package imports like `ui.*` resolve).
-- Log in using your Chainlit credentials; each new chat is stored locally in `.chainlit_memory/chat_data.db`.
+
+**Linux/macOS:**
+```bash
+make run
+```
+
+**Windows (Git Bash):**  
+`make` is not installed by default on Windows. Run the command directly:
+```bash
+PYTHONPATH="$(pwd)" chainlit run ui/app.py -w
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:PYTHONPATH="$(Get-Location)"
+chainlit run ui/app.py -w
+```
+
+**Or install `make` on Windows:**
+- Using Chocolatey: `choco install make`
+
+The command sets `PYTHONPATH` to the project root and runs `chainlit run ui/app.py -w` so package imports like `ui.*` resolve correctly.
+
+**Usage:**
+- Log in using your Chainlit credentials:
+  - **Default credentials:** Username `demo`, Password `demo123`
+  - To change credentials, edit the `USERS` dictionary in `ui/app.py`
+- Each new chat is stored locally in `.chainlit_memory/chat_data.db`.
 - Conversation history is available from the sidebar; use "+ New chat" to start fresh threads.
 - Control the memory scope via `CHAT_MEMORY_SCOPE` in `.env` (`conversation` for per-thread context, `user`/`all` to aggregate history). Restart the app after changing this setting.
