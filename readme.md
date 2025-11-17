@@ -18,8 +18,8 @@ POSTGRES_DSN=postgresql://ts_user:strong_password@localhost:5432/ts_text_to_insi
 MISTRAL_API_KEY=          # required if USE_PROVIDER=mistral
 ```
 
-`utils/general_helpers.py` defaults to the AWS Bedrock provider with the Claude 3.5 Sonnet model (`anthropic.claude-sonnet-4-5-20250929-v1:0`). To switch providers, update `USE_PROVIDER` and `USE_MODEL` accordingly:
-- `aws`: choose any Bedrock model available to your account (e.g., `anthropic.claude-3-haiku-20240307-v1:0` or `anthropic.claude-3-5-sonnet-20241022-v2:0`).
+`utils/general_helpers.py` defaults to the AWS Bedrock provider with the Claude 4.5 Sonnet model (`anthropic.claude-sonnet-4-5-20250929-v1:0`). To switch providers, update `USE_PROVIDER` and `USE_MODEL` accordingly:
+- `aws`: choose any Bedrock model available to your account (e.g., `anthropic.claude-3-haiku-20240307-v1:0` or `anthropic.claude-sonnet-4-5-20250929-v1:0`).
 - `mistral`: specify a hosted model supported by Mistral’s API and supply `MISTRAL_API_KEY`.
 - `ollama`: make sure your Ollama server is running locally with the requested model pulled.
 

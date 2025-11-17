@@ -1,0 +1,22 @@
+{
+  "1": "What is the average operating rate for sites belonging to projects in 'France'?",
+  "2": "List the names of all gateways that are installed on sites classified as 'Bridge' and are using 'LTE' as their transfer protocol.",
+  "3": "How many total measurements were recorded last week for sensors reporting the 'Temperature' metric?",
+  "4": "Show me the project names and the total count of sites for each project, ordered from the project with the most sites to the least.",
+  "5": "What are the FTP IP addresses for configurations associated with gateways that have a 'Battery' power supply?",
+  "6": "Find the average sensor value for each distinct metric unit (e.g., 'Volts', 'Degrees C') recorded from gateways installed on sites in 'Germany'.",
+  "7": "Which sites have an operating rate above 90% and also have at least one gateway configuration that is currently inactive?",
+  "8": "List all client companies and the number of projects they have, focusing only on projects that started after '2023-01-01'.",
+  "9": "What is the name and serial number of gateways that are linked to a configuration file named 'config_v2.txt'?",
+  "10": "Show the average measurement value for sensors reporting 'Vibration' across all sites belonging to the client 'InfraBuild Ltd'.",
+  "11": "How many active (not deleted) sites are associated with gateways managed by the 'Alpha Team' operating team?",
+  "12": "Find the names of projects that have sites with an average operating rate lower than 50%.",
+  "13": "List the top 5 sites (by name) that have the highest total number of installed gateways.",
+  "14": "What is the most recent measurement timestamp received from any sensor located on a 'main site'?",
+  "15": "Show all gateways (by name) that have at least one configuration error message recorded.",
+  "16": "Calculate the total number of measurements received per gateway name, but only for gateways using 'Solar' power supply.",
+  "17": "What are the names of sites that have gateways whose configurations were last treated more than 30 days ago?",
+  "18": "Find the average value for the 'Humidity' metric on projects located in 'London', grouped by the project name.",
+  "19": "List all projects that have at least one site with a provisional end date set for 2026.",
+  "20": "Which gateway (by serial number) has the highest number of associated configuration files?"
+}
