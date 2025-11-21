@@ -11,6 +11,7 @@ Create a `.env` file at the project root and include the variables required by `
 # Core settings
 CHAINLIT_AUTH_SECRET=...
 USE_PROVIDER="aws"          # aws | mistral | ollama
+SQL_AGENT_MODE = "SPIDER" #SPIDER or CUSTOM
 USE_MODEL="anthropic.claude-sonnet-4-5-20250929-v1:0"
 POSTGRES_DSN=postgresql://ts_user:strong_password@localhost:5432/ts_text_to_insight
 
