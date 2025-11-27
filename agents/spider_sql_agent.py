@@ -57,7 +57,7 @@ class PromptAgentAdapter:
         # 4. TRANSFORM HISTORY (Optional but recommended for comparison)
         # Convert legacy self.thoughts/self.actions into LangChain messages
         # so the Supervisor can see what happened.
-        converted_messages = []
+        converted_messages = [""]
         for i in range(len(self.internal_agent.observations)):
              obs = self.internal_agent.observations[i]
              thought = self.internal_agent.thoughts[i]
