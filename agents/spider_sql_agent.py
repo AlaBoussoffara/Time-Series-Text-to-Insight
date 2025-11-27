@@ -46,10 +46,13 @@ class PromptAgentAdapter:
 
         # 3. EXECUTE: Run the legacy loop
         # We block here until the agent finishes its 'while' loop
+        done = False
         try:
             done, final_result_string = self.internal_agent.run()
         except Exception as e:
-            final_result_string = f"Legacy Agent Crashed: {str(e)}"
+            final_result_string = f"Spider Agent Crashed: {str(e)}"
+        print(done)
+        print(final_result_string)
 
         # 4. TRANSFORM HISTORY (Optional but recommended for comparison)
         # Convert legacy self.thoughts/self.actions into LangChain messages
@@ -63,6 +66,10 @@ class PromptAgentAdapter:
              converted_messages.append(msg)
 
         # 5. REPACK: Return the exact keys the Supervisor expects
+        if not converted_messages:
+            # If no observations were generated (e.g. crash or immediate return),
+            # ensure we have at least one message to return as the final answer.
+            converted_messages.append(AIMessage(content=final_result_string or "No result generated."))
         return {
             "sql_agent_final_answer": converted_messages[-1],
             "messages": converted_messages, # The trace

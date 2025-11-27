@@ -96,12 +96,7 @@ class PromptAgent:
         
         self.history_messages.append({
             "role": "system",
-            "content": [
-                {
-                    "type": "text",
-                    "text": self.system_message 
-                },
-            ]
+            "content": self.system_message
         })
         
     def predict(self, obs: Dict=None) -> List:
@@ -265,7 +260,6 @@ class PromptAgent:
                 logger.info("The task is done.")
                 break
             step_idx += 1
-
         return done, result
 
     def get_trajectory(self):
