@@ -18,8 +18,8 @@ PROJECT_ROOT = CURRENT_FILE.parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from prompts.spider_agent_prompt import POSTGRES_SYSTEM, LOCAL_SYSTEM, DBT_SYSTEM, SNOWFLAKE_SYSTEM, REFERENCE_PLAN_SYSTEM
-from agents.spider_agent.action import Action, Bash, Terminate, CreateFile, EditFile, LOCAL_DB_SQL, POSTGRES_EXEC_SQL, SNOWFLAKE_EXEC_SQL, POSTGRES_GET_TABLES, POSTGRES_GET_TABLE_INFO, POSTGRES_SAMPLE_ROWS
+from prompts.spider_agent_prompt import POSTGRES_SYSTEM, LOCAL_SYSTEM, DBT_SYSTEM, REFERENCE_PLAN_SYSTEM
+from agents.spider_agent.action import Action, Bash, Terminate, CreateFile, EditFile, LOCAL_DB_SQL, POSTGRES_EXEC_SQL, POSTGRES_GET_TABLES, POSTGRES_GET_TABLE_INFO, POSTGRES_SAMPLE_ROWS
 # from spider_agent.envs.spider_agent import Spider_Agent_Env
 from utils.general_helpers import llm_from
 

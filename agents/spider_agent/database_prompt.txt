@@ -1,0 +1,88 @@
+Database context for SQL agent
+--------------------------------
+Use this schema summary when deciding how to generate SQL queries against the operational PostgreSQL database that powers the project. Projects contain multiple sites; each site can host several gateways; gateways receive configuration records that define the data feeds they ingest, and the resulting measurements are stored in the raw time-series table.
+
+projects
+- Description: High-level metadata for each monitoring project, including client, geography, and schedule fields.
+- project_id integer primary key
+- name text
+- country text
+- client_company_name text
+- time_zone text
+- city text
+- start_date text
+- description text
+
+sites  (project-level locations)
+- Description: Physical or logical locations tied to projects; includes lifecycle timestamps and status indicators used for reporting.
+- site_id integer primary key
+- name text
+- type text
+- extent text
+- start_date text
+- previsional_end text
+- project_id integer references projects(project_id)
+- created_at text
+- updated_at text
+- deleted boolean
+- operating_rate double precision
+- main_site integer
+
+gateways  (hardware relaying measurements)
+- Description: Field gateways that forward sensor data to the platform, with operational metadata such as power supply, coordinates, and provider.
+- gateway_id integer primary key
+- name text
+- serial_number text
+- transfer_protocol text
+- power_supply text
+- installation_date text
+- operating_team text
+- x double precision
+- y double precision
+- z double precision
+- time_zone text
+- geom text
+- created_at text
+- updated_at text
+- provider integer
+
+configs  (ingestion settings per gateway)
+- Description: Gateway-specific ingestion definitions covering file names, transport settings, and structured payloads that describe expected variables.
+- config_id integer primary key
+- file_name text
+- last_treatment text
+- ftp text
+- ftp_ip text
+- ftp_user text
+- ftp_password text
+- ftp_directory text
+- payload text
+- gateway_id integer references gateways(gateway_id)
+- parsing_id integer
+- file_id integer
+- to_move text
+- regex_variables text
+- created_at text
+- updated_at text
+- active boolean
+- error_message text
+- last_modified text
+- keep_folder boolean
+
+site_gateways  (site ↔ gateway junction)
+- Description: Many-to-many bridge linking sites to the gateways installed there; use to traverse from projects to the associated hardware.
+- site_id integer references sites(site_id)
+- gateway_id integer references gateways(gateway_id)
+- primary key (site_id, gateway_id)
+
+raw_measurements  (time-series facts)
+- Description: Sensor readings ingested from the gateways; combine with gateway metadata on `gateway_name = gateways.name` and relate to configuration payload details via `variable_alias` and `variable_id` when interpreting variables.
+- gateway_name text
+- variable_name text
+- variable_alias text
+- sensor_id integer
+- value double precision
+- timestamp text
+- variable_id integer
+- unit text
+- metric text

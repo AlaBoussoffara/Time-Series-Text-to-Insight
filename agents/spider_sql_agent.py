@@ -109,6 +109,6 @@ class MockSpiderEnv:
 
         # 4. Default/Fallbacks
         else:
-            observation = "Action executed (simulated)."
+            observation = f"Action {type(action).__name__} executed (simulated)"
 
         return observation, done
