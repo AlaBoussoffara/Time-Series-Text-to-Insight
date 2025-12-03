@@ -1,10 +1,12 @@
 from pathlib import Path
 from typing import Optional, Sequence
-
+import os
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 
+
 from agents.analysis_agent import create_analysis_agent
+from agents.spider_sql_agent import PromptAgentAdapter
 from agents.sql_agent import create_sql_agent
 from agents.visualisation_agent import create_visualization_agent
 from utils.general_helpers import format_message, llm_from, stream_graph
@@ -23,7 +25,10 @@ def build_supervisor_graph() -> StateGraph:
     analysis_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0").with_structured_output(AnalysisAgentOutput)
     visualization_llm = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0").with_structured_output(VisualizationPlanOutput)
     
-    sql_agent = create_sql_agent(sql_llm)
+    if os.getenv("SQL_AGENT_MODE") == "SPIDER" :
+        sql_agent = PromptAgentAdapter()
+    else :
+        sql_agent = create_sql_agent(sql_llm)
     analysis_agent = create_analysis_agent(analysis_llm)
     visualization_agent = create_visualization_agent(visualization_llm)
     

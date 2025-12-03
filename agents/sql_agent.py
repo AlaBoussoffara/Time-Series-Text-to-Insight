@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pandas as pd
-from langchain_core.messages import HumanMessage, SystemMessage, AnyMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 
 from utils.datastore import DATASTORE, DataStore
