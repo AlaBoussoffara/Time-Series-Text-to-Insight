@@ -58,7 +58,7 @@ class Bash(Action):
         return """
 ## Bash Action
 * Signature: Bash(code="shell_command")
-* Description: This action string will execute a valid shell command in the `code` field. Only non-interactive commands are supported. Commands like "vim" and viewing images directly (e.g., using "display") are not allowed.
+* Description: This action string will execute a valid shell command in the `code` field. Only non-interactive commands are supported. Commands like "vim" and viewing images directly (e.g., using "display") are not allowed. The observation will contain the Stdout and Stderr of the executed command.
 * Example: Bash(code="ls -l")
 """
 
@@ -195,7 +195,7 @@ class LOCAL_DB_SQL(Action):
 class POSTGRES_EXEC_SQL(Action):
     action_type: str = field(default="execute_POSTGRES_SQL",init=False,repr=False,metadata={"help": 'type of action, c.f., "exec_POSTGRES_sql"'})
     sql_query: str = field(metadata={"help": 'SQL query to execute'})
-    is_save: bool = field(metadata={"help": 'whether to save result to CSV'})
+    is_save: bool = False
     save_path: str = field(default=None, metadata={"help": 'path where the output CSV file is saved if is_save is True'})
 
     @classmethod

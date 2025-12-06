@@ -12,6 +12,7 @@ from langgraph.graph import END, START, StateGraph
 import os
 from utils.datastore import DATASTORE, DataStore
 from utils.sql_utils import connect_postgres, execute_sql_tool
+import subprocess
 from utils.messages import AgentMessage
 
 
@@ -105,9 +106,43 @@ class MockSpiderEnv:
             try:
                 # Delegate to your EXISTING sql_utils
                 result_rows = execute_sql_tool(self.conn, sql_query)
-                observation = f"Success. Rows returned: {result_rows}"
+                
+                # Handle persistence if requested
+                if getattr(action, 'is_save', False):
+                    try:
+                        df = pd.DataFrame(result_rows)
+                        # Use save_path as reference key if provided, otherwise let datastore generate one
+                        ref_key = action.save_path if action.save_path else None
+                        saved_ref = self.datastore.put(
+                            df, 
+                            description=f"Result of query: {sql_query}",
+                            ref=ref_key,
+                            upsert=True
+                        )
+                        observation = f"Success. Rows returned: {len(result_rows)}. Data saved to datastore with ref: {saved_ref}"
+                    except Exception as e:
+                        observation = f"Success. Rows returned: {len(result_rows)}. Warning: Failed to save to datastore: {str(e)}"
+                else:
+                    observation = f"Success. Rows returned: {result_rows}"
             except Exception as e:
                 observation = f"SQL Error: {str(e)}"
+
+        # 3. Intercept Bash Actions
+        elif type(action).__name__ == 'Bash':
+            try:
+                # Execute the bash command
+                result = subprocess.run(action.code, shell=True, capture_output=True, text=True, timeout=30)
+                observation = ""
+                if result.stdout:
+                    observation += f"Stdout: {result.stdout}"
+                if result.stderr:
+                    if observation:
+                        observation += "\n"
+                    observation += f"Stderr: {result.stderr}"
+                if not observation:
+                    observation = "Command executed successfully with no output."
+            except Exception as e:
+                observation = f"Bash Error: {str(e)}"
 
         # 3. Intercept Termination
         elif type(action).__name__ == 'Terminate':
