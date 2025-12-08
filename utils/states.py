@@ -48,3 +48,19 @@ class AnalysisState(TypedDict, total=False):
     follow_up_questions: List[str]
     error_message: Optional[str]
     datastore_obj: Any
+
+
+class VisualizationState(TypedDict, total=False):
+    """State passed through the visualization workflow."""
+
+    instruction: str
+    datastore: Any
+    datastore_summary: str
+    datastore_obj: Any
+    chart_plan: Dict[str, Any]
+    selected_dataset: str
+    detected_columns: Dict[str, Any]
+    output_path: str
+    warnings: List[str]
+    error_message: Optional[str]
+    visualization_agent_final_answer: str

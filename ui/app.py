@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import textwrap
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Optional, Sequence, List
 
 import chainlit as cl
 from dotenv import load_dotenv
@@ -27,6 +27,7 @@ except ImportError:  # pragma: no cover - older Chainlit
 
 load_dotenv()
 
+ROOT_DIR = Path(__file__).resolve().parents[1]
 PERSIST_DIR = Path(".chainlit_memory")
 PERSIST_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -205,6 +206,73 @@ async def _stream_response(text: str, structured: dict) -> None:
     await message.update()
 
 
+def _resolve_chart_path(raw_path: Optional[str]) -> Optional[Path]:
+    if not raw_path:
+        return None
+    candidate = Path(raw_path)
+    if candidate.exists():
+        return candidate
+    alt = ROOT_DIR / raw_path
+    if alt.exists():
+        return alt
+    return None
+
+
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
+
+
+def _visualization_element(path: Path):
+    suffix = path.suffix.lower()
+    if suffix in IMAGE_EXTENSIONS:
+        return cl.Image(name=path.name, display="inline", path=str(path))
+    return cl.File(name=path.name, path=str(path))
+
+
+async def _send_visualization_previews(supervisor_message) -> None:
+    artifacts: Optional[List[dict]] = getattr(supervisor_message, "visualizations", None)
+    if not artifacts:
+        return
+    for artifact in artifacts:
+        chart_path = artifact.get("chart_path")
+        if not chart_path:
+            continue
+        resolved = _resolve_chart_path(chart_path)
+        warnings = [
+            str(item).strip()
+            for item in (artifact.get("warnings") or [])
+            if str(item).strip()
+        ]
+        summary = str(artifact.get("summary") or "Visualization generated.").strip()
+        error_message = artifact.get("error_message")
+        lines: List[str] = [summary]
+        display_path = resolved
+        if display_path is not None:
+            try:
+                display_path = display_path.relative_to(ROOT_DIR)
+            except ValueError:
+                pass
+        if resolved and resolved.exists():
+            lines.append(f"Path: `{display_path}`")
+        else:
+            lines.append(f"Path unavailable: `{chart_path}`")
+        if error_message:
+            lines.append(f"Warning: {error_message}")
+        if warnings:
+            lines.append("Warnings:")
+            lines.extend(f"- {warn}" for warn in warnings)
+        elements = []
+        if resolved and resolved.exists() and resolved.is_file():
+            try:
+                elements.append(_visualization_element(resolved))
+            except Exception:
+                pass
+        await cl.Message(
+            content="\n".join(lines),
+            author="Visualization Agent",
+            elements=elements or None,
+        ).send()
+
+
 @cl.password_auth_callback
 def auth_callback(username: str, password: str):
     if USERS.get(username) != password:
@@ -280,4 +348,5 @@ async def main(message: cl.Message):
         or ""
     )
     await _stream_response(response_text, structured)
+    await _send_visualization_previews(supervisor)
     memory.save_context({"input": message.content}, {"output": response_text})

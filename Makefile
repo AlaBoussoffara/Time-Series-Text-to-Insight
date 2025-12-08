@@ -3,4 +3,4 @@
 run: chainlit
 
 chainlit:
-	PYTHONPATH="$(CURDIR)" .venv/bin/chainlit run ui/app.py -w
+	PYTHONPATH="$(CURDIR)" chainlit run ui/app.py -w
