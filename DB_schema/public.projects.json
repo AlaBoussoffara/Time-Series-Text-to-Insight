@@ -1,0 +1,65 @@
+{
+  "table": "public.projects",
+  "columns": [
+    {
+      "name": "project_id",
+      "type": "integer",
+      "nullable": false,
+      "description": ""
+    },
+    {
+      "name": "name",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "country",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "client_company_name",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "time_zone",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "city",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "start_date",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    }
+  ],
+  "sample_rows": [
+    {
+      "project_id": 511,
+      "name": "M3-GC03 TISSEO",
+      "country": "France",
+      "client_company_name": "LIGAM",
+      "time_zone": "Europe/Paris",
+      "city": "Toulouse",
+      "start_date": "31/01/2023",
+      "description": "Monitoring en phase de construction sur le lot M3-GC03"
+    }
+  ]
+}
