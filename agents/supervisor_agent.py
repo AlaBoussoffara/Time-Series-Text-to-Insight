@@ -77,10 +77,22 @@ def build_supervisor_graph() -> StateGraph:
             trimmed_history.append(response_messages[-2])
         elif response_messages:
             trimmed_history.append(response_messages[-1])
+            
+        # Extract executed SQL queries from the query log
+        query_log = response.get("query_log", [])
+        executed_sqls = []
+        if isinstance(query_log, list):
+            for entry in query_log:
+                if isinstance(entry, dict) and entry.get("entry_type") == "sql_result":
+                    sql = entry.get("sql_query")
+                    if sql:
+                        executed_sqls.append(sql)
+
         sql_structured_output = {
             "output_type": "SQL Agent",
             "output_content": sql_final_answer,
             "datastore_summary": datastore_snapshot,
+            "sql_queries": executed_sqls,
         }
         return {
             "datastore": datastore,

@@ -70,10 +70,21 @@ class PromptAgentAdapter:
             # If no observations were generated (e.g. crash or immediate return),
             # ensure we have at least one message to return as the final answer.
             converted_messages.append(AIMessage(content=final_result_string or "No result generated."))
+            
+        # Construct query_log from actions
+        query_log = []
+        for action in self.internal_agent.actions:
+            if type(action).__name__ == 'POSTGRES_EXEC_SQL':
+                query_log.append({
+                    "entry_type": "sql_result",
+                    "sql_query": getattr(action, "sql_query", "")
+                })
+
         return {
             "sql_agent_final_answer": converted_messages[-1],
             "messages": converted_messages, # The trace
-            "datastore": datastore # Pass back the datastore
+            "datastore": datastore, # Pass back the datastore
+            "query_log": query_log 
         }
         
 class MockSpiderEnv:

@@ -78,17 +78,17 @@
     {
       "role": "analyste",
       "question": "Mesurer le volume de données collectées par gateway sur les 7 derniers jours.",
-      "sql": "SELECT rm.gateway_name, COUNT(*) AS rows_7d FROM public.raw_measurements rm WHERE rm."timestamp"::timestamptz >= NOW() - INTERVAL '7 days' GROUP BY rm.gateway_name ORDER BY rows_7d DESC;"
+      "sql": "SELECT rm.gateway_name, COUNT(*) AS rows_7d FROM public.raw_measurements rm WHERE rm.'timestamp'::timestamptz >= NOW() - INTERVAL '7 days' GROUP BY rm.gateway_name ORDER BY rows_7d DESC;"
     },
     {
       "role": "analyste",
       "question": "Détecter les trous de mesures supérieurs à 2h pour le Gateway-Tisséo Ligne A.",
-      "sql": "WITH ordered AS (SELECT gateway_name, variable_id, variable_alias, "timestamp"::timestamptz AS ts, LAG(\"timestamp\"::timestamptz) OVER (PARTITION BY gateway_name, variable_id ORDER BY \"timestamp\"::timestamptz) AS prev_ts FROM public.raw_measurements WHERE gateway_name = 'Gateway-Tisséo Ligne A') SELECT gateway_name, variable_id, variable_alias, prev_ts, ts, ts - prev_ts AS gap FROM ordered WHERE prev_ts IS NOT NULL AND ts - prev_ts > INTERVAL '2 hours' ORDER BY gap DESC;"
+      "sql": "WITH ordered AS (SELECT gateway_name, variable_id, variable_alias, 'timestamp'::timestamptz AS ts, LAG(\"timestamp\"::timestamptz) OVER (PARTITION BY gateway_name, variable_id ORDER BY \"timestamp\"::timestamptz) AS prev_ts FROM public.raw_measurements WHERE gateway_name = 'Gateway-Tisséo Ligne A') SELECT gateway_name, variable_id, variable_alias, prev_ts, ts, ts - prev_ts AS gap FROM ordered WHERE prev_ts IS NOT NULL AND ts - prev_ts > INTERVAL '2 hours' ORDER BY gap DESC;"
     },
     {
       "role": "analyste",
       "question": "Calculer la moyenne journalière par alias de variable pour le Gateway-Tisséo Ligne A.",
-      "sql": "SELECT gateway_name, variable_alias, date_trunc('day', "timestamp"::timestamptz) AS day, AVG(value) AS avg_value FROM public.raw_measurements WHERE gateway_name = 'Gateway-Tisséo Ligne A' GROUP BY gateway_name, variable_alias, day ORDER BY day DESC, variable_alias;"
+      "sql": "SELECT gateway_name, variable_alias, date_trunc('day', 'timestamp'::timestamptz) AS day, AVG(value) AS avg_value FROM public.raw_measurements WHERE gateway_name = 'Gateway-Tisséo Ligne A' GROUP BY gateway_name, variable_alias, day ORDER BY day DESC, variable_alias;"
     },
     {
       "role": "analyste",
