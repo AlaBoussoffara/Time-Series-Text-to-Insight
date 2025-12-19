@@ -145,5 +145,61 @@
       "question": "Compter le nombre de capteurs distincts (sensor_id) par gateway dans les mesures.",
       "sql": "SELECT gateway_name, COUNT(DISTINCT sensor_id) AS sensor_count FROM public.raw_measurements GROUP BY gateway_name ORDER BY sensor_count DESC;"
     }
+    {
+      "role": "operateur",
+      "question": "Quelles sont les tables disponibles dans la base de données ?",
+      "sql": "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Pour une table donnée (ex: raw_measurements), quelles sont ses colonnes et leurs types ?",
+      "sql": "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'raw_measurements' ORDER BY ordinal_position;"
+    },
+    {
+      "role": "operateur",
+      "question": "Quels projets existent dans la base ?",
+      "sql": "SELECT project_id, name, client_company_name, country, city FROM public.projects ORDER BY name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Quels sont les sites et à quel projet appartiennent-ils ?",
+      "sql": "SELECT s.site_id, s.name AS site_name, p.name AS project_name FROM public.sites s LEFT JOIN public.projects p ON p.project_id = s.project_id ORDER BY project_name, site_name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Quels gateways sont installés sur chaque site ?",
+      "sql": "SELECT s.name AS site_name, g.name AS gateway_name FROM public.sites s JOIN public.site_gateways sg ON sg.site_id = s.site_id JOIN public.gateways g ON g.gateway_id = sg.gateway_id ORDER BY site_name, gateway_name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Lister tous les gateways avec leur protocole de transfert et leur fournisseur.",
+      "sql": "SELECT gateway_id, name, transfer_protocol, provider FROM public.gateways ORDER BY name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Combien de configs actives existe-t-il par gateway ?",
+      "sql": "SELECT g.name AS gateway_name, COUNT(*) AS active_config_count FROM public.configs c JOIN public.gateways g ON g.gateway_id = c.gateway_id WHERE c.active IS TRUE GROUP BY g.name ORDER BY active_config_count DESC;"
+    },
+    {
+      "role": "operateur",
+      "question": "Quelle est la taille estimée de la table raw_measurements (en GB) et son nombre de lignes ?",
+      "sql": "SELECT ROUND(pg_total_relation_size('public.raw_measurements')/1024.0/1024.0/1024.0,3) AS size_gb, COALESCE(n_live_tup,0) AS estimated_rows FROM pg_stat_all_tables WHERE schemaname='public' AND relname='raw_measurements';"
+    },
+    {
+      "role": "operateur",
+      "question": "Combien de capteurs distincts (sensor_id) ai-je sur les sites MAT et MAT_TOPO?",
+      "sql": "SELECT s.name AS site_name, COUNT(DISTINCT rm.sensor_id) AS sensor_count FROM public.sites s JOIN public.site_gateways sg ON sg.site_id = s.site_id JOIN public.gateways g ON g.gateway_id = sg.gateway_id JOIN public.raw_measurements rm ON rm.gateway_name = g.name WHERE s.name IN ('MAT','MAT_TOPO') GROUP BY s.name ORDER BY s.name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Sur le site Y, quels types de données sont mesurés (metric / unit) ?",
+      "sql": "SELECT DISTINCT rm.metric, rm.unit FROM public.sites s JOIN public.site_gateways sg ON sg.site_id = s.site_id JOIN public.gateways g ON g.gateway_id = sg.gateway_id JOIN public.raw_measurements rm ON rm.gateway_name = g.name WHERE s.name = 'Y' ORDER BY rm.metric, rm.unit;"
+    },
+    {
+      "role": "operateur",
+      "question": "Sur le site Y, ai-je des données avant 2021 pour le capteur Z ?",
+      "sql": "SELECT MIN(timestamp::timestamptz) AS first_measure, MAX(timestamp::timestamptz) AS last_measure, COUNT(*) FILTER (WHERE timestamp::timestamptz < TIMESTAMPTZ '2021-01-01') AS rows_before_2021 FROM public.raw_measurements rm JOIN public.gateways g ON g.name = rm.gateway_name JOIN public.site_gateways sg ON sg.gateway_id = g.gateway_id JOIN public.sites s ON s.site_id = sg.site_id WHERE s.name = 'Y' AND rm.sensor_id = Z;"
+    }
+    
   ]
 }
