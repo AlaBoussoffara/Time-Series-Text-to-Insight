@@ -1,0 +1,59 @@
+{
+  "table": "public.site_gateways",
+  "columns": [
+    {
+      "name": "site_id",
+      "type": "integer",
+      "nullable": false,
+      "description": ""
+    },
+    {
+      "name": "gateway_id",
+      "type": "integer",
+      "nullable": false,
+      "description": ""
+    }
+  ],
+  "sample_rows": [
+    {
+      "site_id": 1087,
+      "gateway_id": 2626
+    },
+    {
+      "site_id": 1087,
+      "gateway_id": 4975
+    },
+    {
+      "site_id": 1055,
+      "gateway_id": 5260
+    },
+    {
+      "site_id": 1055,
+      "gateway_id": 3292
+    },
+    {
+      "site_id": 1087,
+      "gateway_id": 2668
+    },
+    {
+      "site_id": 1055,
+      "gateway_id": 5458
+    },
+    {
+      "site_id": 1055,
+      "gateway_id": 2282
+    },
+    {
+      "site_id": 1055,
+      "gateway_id": 4512
+    },
+    {
+      "site_id": 1055,
+      "gateway_id": 6370
+    },
+    {
+      "site_id": 1087,
+      "gateway_id": 4974
+    }
+  ]
+}

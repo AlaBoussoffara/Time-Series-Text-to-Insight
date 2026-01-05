@@ -25,8 +25,7 @@ def llm_from(provider: str = PROVIDER, model_name: str = MODEL_NAME):
     if provider not in PROVIDER_LIST:
         raise ValueError('choose from "aws", "mistral" or "ollama"')
     if provider == "aws":
-
-        return ChatBedrock(model_id=model_name, region="us-west-2", temperature=0)
+        return ChatBedrock(model_id=model_name, region_name="us-west-2")
     if provider == "mistral":
         api_key = os.getenv("MISTRAL_API_KEY")
         return ChatMistralAI(

@@ -1,11 +1,14 @@
 from pathlib import Path
 from typing import Optional, Sequence
-
+import os
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 
+
 from agents.analysis_agent import create_analysis_agent
+from agents.spider_sql_agent import PromptAgentAdapter
 from agents.sql_agent import create_sql_agent
+from agents.visualisation_agent import create_visualization_agent
 from utils.general_helpers import format_message, llm_from, stream_graph
 from utils.messages import AgentMessage
 from utils.states import GlobalState
@@ -20,11 +23,14 @@ def build_supervisor_graph() -> StateGraph:
     
     sql_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0").with_structured_output(SQLAgentOutput)
     analysis_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0").with_structured_output(AnalysisAgentOutput)
-    #visualization_llm = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0")
+    visualization_llm = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0").with_structured_output(VisualizationPlanOutput)
     
-    sql_agent = create_sql_agent(sql_llm)
+    if os.getenv("SQL_AGENT_MODE") == "SPIDER" :
+        sql_agent = PromptAgentAdapter()
+    else :
+        sql_agent = create_sql_agent(sql_llm)
     analysis_agent = create_analysis_agent(analysis_llm)
-    #visualization_agent = create_visualization_agent(visualization_llm)
+    visualization_agent = create_visualization_agent(visualization_llm)
     
     def supervisor_node(state: GlobalState) -> GlobalState:
         answer = supervisor_llm.invoke(state["global_messages_history"])
@@ -71,10 +77,22 @@ def build_supervisor_graph() -> StateGraph:
             trimmed_history.append(response_messages[-2])
         elif response_messages:
             trimmed_history.append(response_messages[-1])
+            
+        # Extract executed SQL queries from the query log
+        query_log = response.get("query_log", [])
+        executed_sqls = []
+        if isinstance(query_log, list):
+            for entry in query_log:
+                if isinstance(entry, dict) and entry.get("entry_type") == "sql_result":
+                    sql = entry.get("sql_query")
+                    if sql:
+                        executed_sqls.append(sql)
+
         sql_structured_output = {
             "output_type": "SQL Agent",
             "output_content": sql_final_answer,
             "datastore_summary": datastore_snapshot,
+            "sql_queries": executed_sqls,
         }
         return {
             "datastore": datastore,
@@ -140,15 +158,45 @@ def build_supervisor_graph() -> StateGraph:
         }
 
     def visualization_agent_node(state: GlobalState) -> GlobalState:
+        last_message = state["global_messages_history"][-1]
+        instruction = ""
+        if isinstance(last_message, AgentMessage):
+            instruction = str(last_message.structured_output.get("output_content", ""))
+        if not instruction:
+            instruction = str(getattr(last_message, "content", ""))
+        datastore = state.get("datastore")
+        if not isinstance(datastore, DataStore):
+            datastore = DATASTORE
+        datastore_snapshot = datastore.snapshot()
+        response = visualization_agent.invoke(
+            {
+                "instruction": instruction,
+                "datastore": datastore_snapshot,
+                "datastore_obj": datastore,
+            }
+        )
+        visualization_final_answer = response.get(
+            "visualization_agent_final_answer", "Visualization created successfully."
+        )
+        output_path = response.get("output_path")
+        warnings = response.get("warnings", [])
+        error_message = response.get("error_message")
         visualization_structured_output = {
             "output_type": "Visualization Agent",
-            "output_content": "Visualization created successfully.",
+            "output_content": visualization_final_answer,
+            "chart_path": output_path,
+            "warnings": warnings,
+            "error_message": error_message,
         }
-        agent_msg = AgentMessage(
-            name="Visualization Agent",
-            structured_output=visualization_structured_output,
-        )
-        return {"global_messages_history": [agent_msg]}
+        return {
+            "global_messages_history": [
+                AgentMessage(
+                    name="Visualization Agent",
+                    structured_output=visualization_structured_output,
+                )
+            ],
+            "datastore": datastore,
+        }
 
     builder = StateGraph(GlobalState)
     builder.add_node("Supervisor", supervisor_node)
@@ -201,7 +249,24 @@ def run_supervisor(
     }
 
     final_messages = stream_graph(compiled_graph, global_state, log=log)
-    return final_messages[-2]
+    visualization_artifacts: list[dict] = []
+    for message in final_messages:
+        if isinstance(message, AgentMessage) and getattr(message, "name", "") == "Visualization Agent":
+            structured = message.structured_output
+            chart_path = structured.get("chart_path")
+            if chart_path:
+                visualization_artifacts.append(
+                    {
+                        "chart_path": chart_path,
+                        "warnings": structured.get("warnings", []),
+                        "summary": structured.get("output_content"),
+                        "error_message": structured.get("error_message"),
+                    }
+                )
+    final_response = final_messages[-2]
+    if visualization_artifacts:
+        setattr(final_response, "visualizations", visualization_artifacts)
+    return final_response
 
 
 if __name__ == "__main__":

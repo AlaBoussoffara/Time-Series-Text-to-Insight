@@ -3,6 +3,7 @@ langchain
 langchain-core
 langgraph
 plotly
+kaleido
 langchain-ollama
 langchain-mistralai
 langchain-community

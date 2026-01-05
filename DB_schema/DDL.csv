@@ -1,0 +1,79 @@
+table,ddl
+public.configs,"CREATE TABLE public.configs (
+  ""config_id"" integer NOT NULL,
+  ""file_name"" text NULL,
+  ""last_treatment"" text NULL,
+  ""ftp"" text NULL,
+  ""ftp_ip"" text NULL,
+  ""ftp_user"" text NULL,
+  ""ftp_password"" text NULL,
+  ""ftp_directory"" text NULL,
+  ""payload"" text NULL,
+  ""gateway_id"" integer NULL,
+  ""parsing_id"" integer NULL,
+  ""file_id"" integer NULL,
+  ""to_move"" text NULL,
+  ""regex_variables"" text NULL,
+  ""created_at"" text NULL,
+  ""updated_at"" text NULL,
+  ""active"" boolean NULL,
+  ""error_message"" text NULL,
+  ""last_modified"" text NULL,
+  ""keep_folder"" boolean NULL
+);"
+public.gateways,"CREATE TABLE public.gateways (
+  ""gateway_id"" integer NOT NULL,
+  ""name"" text NULL,
+  ""serial_number"" text NULL,
+  ""transfer_protocol"" text NULL,
+  ""power_supply"" text NULL,
+  ""installation_date"" text NULL,
+  ""operating_team"" text NULL,
+  ""x"" double precision NULL,
+  ""y"" double precision NULL,
+  ""z"" double precision NULL,
+  ""time_zone"" text NULL,
+  ""geom"" text NULL,
+  ""created_at"" text NULL,
+  ""updated_at"" text NULL,
+  ""provider"" integer NULL
+);"
+public.projects,"CREATE TABLE public.projects (
+  ""project_id"" integer NOT NULL,
+  ""name"" text NULL,
+  ""country"" text NULL,
+  ""client_company_name"" text NULL,
+  ""time_zone"" text NULL,
+  ""city"" text NULL,
+  ""start_date"" text NULL,
+  ""description"" text NULL
+);"
+public.raw_measurements,"CREATE TABLE public.raw_measurements (
+  ""gateway_name"" text NULL,
+  ""variable_name"" text NULL,
+  ""variable_alias"" text NULL,
+  ""sensor_id"" integer NULL,
+  ""value"" double precision NULL,
+  ""timestamp"" text NULL,
+  ""variable_id"" integer NULL,
+  ""unit"" text NULL,
+  ""metric"" text NULL
+);"
+public.site_gateways,"CREATE TABLE public.site_gateways (
+  ""site_id"" integer NOT NULL,
+  ""gateway_id"" integer NOT NULL
+);"
+public.sites,"CREATE TABLE public.sites (
+  ""site_id"" integer NOT NULL,
+  ""name"" text NULL,
+  ""type"" text NULL,
+  ""extent"" text NULL,
+  ""start_date"" text NULL,
+  ""previsional_end"" text NULL,
+  ""project_id"" integer NULL,
+  ""created_at"" text NULL,
+  ""updated_at"" text NULL,
+  ""deleted"" boolean NULL,
+  ""operating_rate"" double precision NULL,
+  ""main_site"" integer NULL
+);"
