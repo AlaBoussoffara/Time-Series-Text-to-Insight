@@ -41,6 +41,8 @@ def _load_queries(path: Path, limit: Optional[int], start: int) -> List[Dict[str
 
 #     return "N/A"
 
+from utils.llm_judge import BenchmarkJudge
+
 def main():
     load_dotenv()
     parser = argparse.ArgumentParser()
@@ -52,11 +54,23 @@ def main():
     benchmark_file = Path("benchmark_sql.json")
     queries_data = _load_queries(benchmark_file, args.limit, args.start)
 
+    # Initialize Judge
+    judge = BenchmarkJudge()
+
     # Prepare CSV
     file_exists = os.path.isfile(args.output)
     
     with open(args.output, mode='a' if file_exists else 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['Question', 'Benchmark SQL', 'Generated SQL', 'Supervisor Answer']
+        fieldnames = [
+            'Question', 
+            'Benchmark SQL', 
+            'Generated SQL', 
+            'Supervisor Answer',
+            'SQL Score',
+            'SQL Reasoning',
+            'Answer Score',
+            'Answer Reasoning'
+        ]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         
         if not file_exists:
@@ -105,11 +119,20 @@ def main():
                           elif "sql_query" in msg.structured_output:
                                generated_sql = msg.structured_output["sql_query"]
                 
+                # Perform Judgment
+                print(f"   Judging results...")
+                sql_judge_result = judge.judge_sql(question, benchmark_sql, generated_sql)
+                answer_judge_result = judge.judge_answer(question, benchmark_sql, supervisor_answer)
+                
                 writer.writerow({
                     'Question': question,
                     'Benchmark SQL': benchmark_sql,
                     'Generated SQL': generated_sql,
-                    'Supervisor Answer': supervisor_answer
+                    'Supervisor Answer': supervisor_answer,
+                    'SQL Score': sql_judge_result.score,
+                    'SQL Reasoning': sql_judge_result.reasoning,
+                    'Answer Score': answer_judge_result.score,
+                    'Answer Reasoning': answer_judge_result.reasoning
                 })
                 csvfile.flush() # Ensure write
                 
@@ -119,7 +142,11 @@ def main():
                     'Question': question,
                     'Benchmark SQL': benchmark_sql,
                     'Generated SQL': "ERROR",
-                    'Supervisor Answer': str(e)
+                    'Supervisor Answer': str(e),
+                    'SQL Score': 0,
+                    'SQL Reasoning': "Error during processing",
+                    'Answer Score': 0,
+                    'Answer Reasoning': "Error during processing"
                 })
 
 if __name__ == "__main__":

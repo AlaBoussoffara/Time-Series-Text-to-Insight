@@ -144,7 +144,7 @@
       "role": "analyste",
       "question": "Compter le nombre de capteurs distincts (sensor_id) par gateway dans les mesures.",
       "sql": "SELECT gateway_name, COUNT(DISTINCT sensor_id) AS sensor_count FROM public.raw_measurements GROUP BY gateway_name ORDER BY sensor_count DESC;"
-    }
+    },
     {
       "role": "operateur",
       "question": "Quelles sont les tables disponibles dans la base de données ?",
@@ -200,6 +200,5 @@
       "question": "Sur le site Y, ai-je des données avant 2021 pour le capteur Z ?",
       "sql": "SELECT MIN(timestamp::timestamptz) AS first_measure, MAX(timestamp::timestamptz) AS last_measure, COUNT(*) FILTER (WHERE timestamp::timestamptz < TIMESTAMPTZ '2021-01-01') AS rows_before_2021 FROM public.raw_measurements rm JOIN public.gateways g ON g.name = rm.gateway_name JOIN public.site_gateways sg ON sg.gateway_id = g.gateway_id JOIN public.sites s ON s.site_id = sg.site_id WHERE s.name = 'Y' AND rm.sensor_id = Z;"
     }
-    
   ]
 }
