@@ -276,6 +276,7 @@ def create_sql_agent(llm):
                 query_log.pop()
             summary_entry = {
                 "entry_type": "persistence_summary",
+                "sql_query": last_entry.get("sql_query"),
                 "reference_key": reference_key or "",
                 "description": description or "",
                 "row_count": row_count,

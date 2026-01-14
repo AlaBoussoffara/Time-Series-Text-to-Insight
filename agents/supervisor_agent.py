@@ -83,7 +83,7 @@ def build_supervisor_graph() -> StateGraph:
         executed_sqls = []
         if isinstance(query_log, list):
             for entry in query_log:
-                if isinstance(entry, dict) and entry.get("entry_type") == "sql_result":
+                if isinstance(entry, dict) and (entry.get("entry_type") == "sql_result" or entry.get("entry_type") == "persistence_summary"):
                     sql = entry.get("sql_query")
                     if sql:
                         executed_sqls.append(sql)
