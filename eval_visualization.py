@@ -5,6 +5,7 @@ from tqdm import tqdm
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import BaseMessage
+from utils.general_helpers import llm_from
 
 # --- 1. IMPORT DU NOUVEAU SUPERVISEUR ---
 # Assurez-vous que le code du superviseur fourni est bien dans agents/supervisor_agent.py
@@ -13,7 +14,7 @@ from agents.supervisor_agent import run_supervisor
 
 # --- 2. CONFIGURATION DU JUGE (LLM) ---
 # Le juge reste le même, mais son prompt sera adapté au nouveau format de sortie
-JUDGE_LLM = llm_from("aws", "us.anthropic.claude-sonnet-3-5-20241022-v2:0")
+JUDGE_LLM = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
 
 # Structure de notation détaillée
 class DetailedGrade(BaseModel):
@@ -54,37 +55,42 @@ def evaluate_response_detailed(query: str, agent_result: Dict[str, Any]) -> Deta
     system_prompt = """Tu es un expert en Data Visualization. Tu agis en tant que juge impartial.
     TACHE : Comparer la demande utilisateur avec le résultat de l'exécution d'un Agent de Visualisation.
     
-    CONTEXTE : L'agent actuel ne génère pas de code Python brut (matplotlib/seaborn) mais utilise Plotly Express 
-    sur des Dataframes existants dans un Datastore. Il retourne un chemin de fichier (chart_path) et un résumé.
+    CONTEXTE : L'agent génère du code Python utilisant Plotly Express.
+    Tu dois juger la qualité et la pertinence du code généré par rapport à la demande.
+    Le fichier graphique (chart_path) est une conséquence du code, mais c'est le CODE qui est le plus important ici.
     
     INSTRUCTIONS :
     1. Analyse la DEMANDE.
-    2. Analyse les METADONNÉES DE SORTIE (Chemin, Résumé, Erreurs).
-    3. Si l'agent indique "success" et a produit un fichier pertinent (ex: .png ou .html) correspondant à l'intention, note 1.
-    4. Si l'agent a échoué (erreur, pas de dataset trouvé, ou type de graph incohérent), note 0.
+    2. Analyse le CODE GÉNÉRÉ (s'il existe).
+    3. Si le code semble correct pour répondre à la demande (bon type de graph, bonnes variables, bons filtres), note 1.
+    4. Si le code est absent, incohérent, ou utilise le mauvais type de graphique, note 0.
     
-    Note : Sois indulgent sur les détails stylistiques (couleurs précises) car l'agent utilise des templates, 
-    mais strict sur le type de graphique (ex: Pie chart demandé vs Bar chart produit)."""
+    Note : Sois indulgent sur les détails stylistiques (couleurs précises non supportées par l'agent simple), 
+    mais strict sur la logique de visualisation (ex: Pie chart vs Bar chart)."""
     
     # Construction d'une représentation textuelle de l'objet résultat pour le LLM
     output_description = f"""
     --- RÉSULTAT DE L'AGENT ---
     Success: {not bool(agent_result.get('error_message'))}
     Chart Path: {agent_result.get('chart_path', 'N/A')}
+    Generated Code: {agent_result.get('generated_code', 'N/A')}
     Summary: {agent_result.get('summary', 'N/A')}
     Warnings: {agent_result.get('warnings', [])}
     Error: {agent_result.get('error_message', 'None')}
     """
     
-    user_prompt = f"""
+    user_prompt_template = """
     --- DEMANDE UTILISATEUR ---
     "{query}"
     
     {output_description}
     """
     
-    prompt = ChatPromptTemplate.from_messages([("system", system_prompt), ("user", user_prompt)])
-    return (prompt | JUDGE_LLM.with_structured_output(DetailedGrade)).invoke({})
+    prompt = ChatPromptTemplate.from_messages([("system", system_prompt), ("user", user_prompt_template)])
+    return (prompt | JUDGE_LLM.with_structured_output(DetailedGrade)).invoke({
+        "query": query,
+        "output_description": output_description
+    })
 
 # --- 5. EXECUTION ---
 def run_benchmark_20():
@@ -110,6 +116,7 @@ def run_benchmark_20():
                 # Pas de visualisation, on regarde le contenu textuel (erreur potentielle ou réponse simple)
                 agent_result = {
                     "chart_path": None,
+                    "generated_code": None,
                     "summary": response_msg.content,
                     "error_message": "Aucune visualisation détectée dans la réponse du superviseur."
                 }
@@ -126,8 +133,13 @@ def run_benchmark_20():
                 "expected": grade.expected,
                 "actual": grade.actual,
                 "reason": grade.reasoning,
-                "file_generated": agent_result.get('chart_path')
+                "file_generated": agent_result.get('chart_path'),
+                "code_generated": agent_result.get('generated_code')
             })
+
+            # Sauvegarde incrémentale
+            df_temp = pd.DataFrame(results)
+            df_temp.to_csv("benchmark_new_architecture_results.csv", index=False)
 
         except Exception as e:
             print(f"Erreur Critique Q{item['id']}: {e}")
@@ -139,10 +151,15 @@ def run_benchmark_20():
                 "expected": "N/A",
                 "actual": "Crash du script python",
                 "reason": str(e),
-                "file_generated": None
+                "file_generated": None,
+                "code_generated": None
             })
+            
+            # Sauvegarde incrémentale même en cas d'erreur
+            df_temp = pd.DataFrame(results)
+            df_temp.to_csv("benchmark_new_architecture_results.csv", index=False)
 
-    # --- 6. RÉSULTATS ---
+    # --- 6. RÉSULTATS FINAUX ---
     df = pd.DataFrame(results)
     final_score = df["score"].sum()
     
@@ -153,9 +170,7 @@ def run_benchmark_20():
     print("\nDétail par difficulté :")
     print(df.groupby("level")["score"].agg(['count', 'sum', 'mean']))
     
-    # Sauvegarde
-    df.to_csv("benchmark_new_architecture_results.csv", index=False)
-    print(f"\nRapport sauvegardé dans 'benchmark_new_architecture_results.csv'")
+    print(f"\nRapport final sauvegardé dans 'benchmark_new_architecture_results.csv'")
 
 if __name__ == "__main__":  
     # Attention : Ce benchmark suppose que le DATASTORE est peuplé. 

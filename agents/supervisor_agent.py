@@ -173,6 +173,7 @@ def build_supervisor_graph() -> StateGraph:
             "output_type": "Visualization Agent",
             "output_content": visualization_final_answer,
             "chart_path": output_path,
+            "generated_code": response.get("generated_code"),
             "warnings": warnings,
             "error_message": error_message,
         }
@@ -249,6 +250,7 @@ def run_supervisor(
                         "warnings": structured.get("warnings", []),
                         "summary": structured.get("output_content"),
                         "error_message": structured.get("error_message"),
+                        "generated_code": structured.get("generated_code"),
                     }
                 )
     final_response = final_messages[-2]

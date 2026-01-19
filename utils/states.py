@@ -64,3 +64,4 @@ class VisualizationState(TypedDict, total=False):
     warnings: List[str]
     error_message: Optional[str]
     visualization_agent_final_answer: str
+    generated_code: Optional[str]

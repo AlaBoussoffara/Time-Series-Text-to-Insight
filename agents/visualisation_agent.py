@@ -370,12 +370,22 @@ def _render_chart(
     }
     if series_column:
         plot_kwargs["color"] = series_column
+    
+    # Generate code string
+    code_args = [f"data_frame=df", f"x='{time_column}'", f"y='{value_column}'"]
+    if title:
+        code_args.append(f"title='{title}'")
+    if series_column:
+        code_args.append(f"color='{series_column}'")
+    
+    code_str = f"px.{chart_type}({', '.join(code_args)})"
+
     if chart_type == "line":
-        return px.line(**plot_kwargs)
+        return px.line(**plot_kwargs), code_str
     if chart_type == "bar":
-        return px.bar(**plot_kwargs)
+        return px.bar(**plot_kwargs), code_str
     if chart_type == "scatter":
-        return px.scatter(**plot_kwargs)
+        return px.scatter(**plot_kwargs), code_str
     raise ValueError(f"Unsupported chart type: {chart_type}")
 
 
@@ -474,7 +484,7 @@ def _attempt_visualization(
     }
 
     try:
-        figure = _render_chart(
+        figure, code_str = _render_chart(
             filtered_df,
             plan.chart_type,
             time_column,
@@ -520,6 +530,7 @@ def _attempt_visualization(
         "summary": summary,
         "output_path": str(final_path),
         "detected_columns": detected_columns,
+        "code": code_str,
     }
 
 
@@ -608,6 +619,7 @@ def create_visualization_agent(llm):
                 )
                 state["output_path"] = attempt.get("output_path", "")
                 state["warnings"] = warnings
+                state["generated_code"] = attempt.get("code", "")
                 print(f"[Visualization Agent] success: dataset={dataset_key} output={state['output_path']}")
                 return state
             reason = attempt.get("reason") or "unknown issue"
