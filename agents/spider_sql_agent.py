@@ -13,6 +13,7 @@ import os
 from utils.datastore import DATASTORE, DataStore
 from utils.sql_utils import connect_postgres, execute_sql_tool
 from utils.messages import AgentMessage
+import subprocess
 
 
 
@@ -119,13 +120,29 @@ class MockSpiderEnv:
                 observation = f"Success. Rows returned: {result_rows}"
             except Exception as e:
                 observation = f"SQL Error: {str(e)}"
+        # 3. Intercept Bash Actions
+        elif type(action).__name__ == 'Bash':
+            try:
+                # Execute the bash command
+                result = subprocess.run(action.code, shell=True, capture_output=True, text=True, timeout=30)
+                observation = ""
+                if result.stdout:
+                    observation += f"Stdout: {result.stdout}"
+                if result.stderr:
+                    if observation:
+                        observation += "\n"
+                    observation += f"Stderr: {result.stderr}"
+                if not observation:
+                    observation = "Command executed successfully with no output."
+            except Exception as e:
+                observation = f"Bash Error: {str(e)}"
 
-        # 3. Intercept Termination
+        # 4. Intercept Termination
         elif type(action).__name__ == 'Terminate':
             done = True
             observation = action.output # The final answer text
 
-        # 4. Default/Fallbacks
+        # 5. Default/Fallbacks
         else:
             observation = f"Action {type(action).__name__} executed (simulated)"
 
