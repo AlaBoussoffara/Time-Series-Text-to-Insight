@@ -9,6 +9,7 @@ from agents.analysis_agent import create_analysis_agent
 from agents.spider_sql_agent import PromptAgentAdapter
 from agents.sql_agent import create_sql_agent
 from agents.visualisation_agent import create_visualization_agent
+from agents.visualisation_codegen_agent import create_visualization_codegen_agent
 from utils.general_helpers import llm_from, stream_graph
 from utils.messages import AgentMessage
 from utils.states import GlobalState
@@ -47,19 +48,28 @@ def build_supervisor_graph() -> StateGraph:
         "anthropic.claude-3-5-sonnet-20241022-v2:0",
         agent_name="Analysis Agent",
     ).with_structured_output(AnalysisAgentOutput)
-    visualization_llm = llm_from(
-        "aws",
-        "anthropic.claude-3-haiku-20240307-v1:0",
-        agent_name="Visualization Agent",
-    ).with_structured_output(VisualizationPlanOutput)
+    visualization_mode = os.getenv("VISUALIZATION_AGENT_MODE", "CODE").upper()
+    if visualization_mode == "CODE":
+        visualization_llm = llm_from(
+            "aws",
+            "anthropic.claude-3-5-sonnet-20241022-v2:0",
+            agent_name="Visualization Agent",
+        ).with_structured_output(VisualizationCodeOutput)
+        visualization_agent = create_visualization_codegen_agent(visualization_llm)
+    else:
+        visualization_llm = llm_from(
+            "aws",
+            "anthropic.claude-3-5-sonnet-20241022-v2:0",
+            agent_name="Visualization Agent",
+        ).with_structured_output(VisualizationPlanOutput)
+        visualization_agent = create_visualization_agent(visualization_llm)
     
     if os.getenv("SQL_AGENT_MODE") == "SPIDER" :
         sql_agent = PromptAgentAdapter()
     else :
         sql_agent = create_sql_agent(sql_llm)
     analysis_agent = create_analysis_agent(analysis_llm)
-    visualization_agent = create_visualization_agent(visualization_llm)
-    
+
     def supervisor_node(state: GlobalState) -> GlobalState:
         answer = supervisor_llm.invoke(state["global_messages_history"])
         structured = answer.model_dump()
@@ -210,12 +220,16 @@ def build_supervisor_graph() -> StateGraph:
             "visualization_agent_final_answer", "Visualization created successfully."
         )
         output_path = response.get("output_path")
+        output_paths = response.get("output_paths") or ([] if not output_path else [output_path])
+        visualizations = response.get("visualizations") or []
         warnings = response.get("warnings", [])
         error_message = response.get("error_message")
         visualization_structured_output = {
             "output_type": "Visualization Agent",
             "output_content": visualization_final_answer,
             "chart_path": output_path,
+            "chart_paths": output_paths,
+            "visualizations": visualizations,
             "warnings": warnings,
             "error_message": error_message,
         }
@@ -287,16 +301,28 @@ def run_supervisor(
         for message in final_messages:
             if isinstance(message, AgentMessage) and getattr(message, "name", "") == "Visualization Agent":
                 structured = message.structured_output
-                chart_path = structured.get("chart_path")
-                if chart_path:
-                    visualization_artifacts.append(
-                        {
-                            "chart_path": chart_path,
-                            "warnings": structured.get("warnings", []),
-                            "summary": structured.get("output_content"),
-                            "error_message": structured.get("error_message"),
-                        }
-                    )
+                artifacts = structured.get("visualizations") or []
+                if artifacts:
+                    for item in artifacts:
+                        visualization_artifacts.append(
+                            {
+                                "chart_path": item.get("chart_path"),
+                                "warnings": structured.get("warnings", []),
+                                "summary": item.get("summary") or structured.get("output_content"),
+                                "error_message": structured.get("error_message"),
+                            }
+                        )
+                else:
+                    chart_path = structured.get("chart_path")
+                    if chart_path:
+                        visualization_artifacts.append(
+                            {
+                                "chart_path": chart_path,
+                                "warnings": structured.get("warnings", []),
+                                "summary": structured.get("output_content"),
+                                "error_message": structured.get("error_message"),
+                            }
+                        )
         final_response = final_messages[-2]
         if visualization_artifacts:
             setattr(final_response, "visualizations", visualization_artifacts)

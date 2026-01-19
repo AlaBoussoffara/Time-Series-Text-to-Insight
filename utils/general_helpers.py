@@ -64,11 +64,18 @@ def format_message(message: BaseMessage) -> tuple[str, Optional[str], str]:
     return name, output_type, str(output_content)
 
 
-def stream_graph(compiled_graph, state, *, log: bool = True) -> list[BaseMessage]:
+def stream_graph(
+    compiled_graph,
+    state,
+    *,
+    log: bool = True,
+    recursion_limit: Optional[int] = 50,
+) -> list[BaseMessage]:
     """Aggregate global message history as the graph executes, logging updates when requested."""
     history: list[BaseMessage] = list(state.get("global_messages_history", []))
     seen_ids = {id(message) for message in history}
-    for event in compiled_graph.stream(state):
+    config = {"recursion_limit": recursion_limit} if recursion_limit else None
+    for event in compiled_graph.stream(state, config=config):
         for node, payload in event.items():
             messages = payload.get("global_messages_history")
             if not messages:
