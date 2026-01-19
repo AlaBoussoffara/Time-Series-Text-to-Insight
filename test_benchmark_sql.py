@@ -165,7 +165,7 @@ def main():
                           # I will update supervisor_agent.py next to include sql_queries in the output
                           queries = msg.structured_output.get("sql_queries", [])
                           if queries:
-                               generated_sql = "; ".join(queries)
+                               generated_sql = queries[-1]
                           elif "sql_query" in msg.structured_output:
                                generated_sql = msg.structured_output["sql_query"]
                 

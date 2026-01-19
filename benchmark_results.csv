@@ -423,3 +423,29 @@ FROM public.configs c
 LEFT JOIN public.gateways g ON c.gateway_id = g.gateway_id 
 LIMIT 5;","Source: SQL Agent
 Retrieved all active configurations with their associated gateway names (columns gateway_name, config_id, file_name, active). Found 24 active configurations across various gateways. The dataset has been stored under active_gateway_configs.",0,0,234375
+Lister toutes les configs actives avec le nom du gateway et le fichier associé.,"SELECT c.config_id, g.name AS gateway_name, c.file_name FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id WHERE c.active IS TRUE ORDER BY gateway_name, c.file_name;",N/A,"Source: SQL Agent
+Liste des configurations actives par gateway:
+
+MAT-M_TOPO:
+- Surface_MAT-M_CVG.dat (config_id: 12077)
+- Surface_MAT-M_TopoManu.dat (config_id: 12078)
+
+MAT_CVG_PM:
+- Surface_MAT_CVG_PM.dat (config_id: 10595)
+- Surface_MAT_CVG_PM_2.dat (config_id: 10596)
+- Surface_MAT_CVG_PM_3.dat (config_id: 10692)
+
+MAT_INCLINO:
+- MAT_INF1_Ma02.dat (config_id: 10440)
+- MAT_INF2_B16.dat (config_id: 10441)
+
+MAT_INCLINO_2:
+- MAT_INF3_B1.dat (config_id: 10442)
+
+MAT_INCLINO_3:
+- MAT_INF5_B7.dat (config_id: 10444)
+- MAT_INF6_B22.dat (config_id: 10449)",0,0,76847
+Lister toutes les configs actives avec le nom du gateway et le fichier associé.,"SELECT c.config_id, g.name AS gateway_name, c.file_name FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id WHERE c.active IS TRUE ORDER BY gateway_name, c.file_name;","SELECT g.name AS gateway_name, c.config_id, c.file_name, c.active FROM public.configs c INNER JOIN public.gateways g ON c.gateway_id = g.gateway_id WHERE c.active = true; SELECT g.name AS gateway_name, c.config_id, c.file_name, c.active FROM public.configs c INNER JOIN public.gateways g ON c.gateway_id = g.gateway_id WHERE c.active = true; SELECT g.name AS gateway_name, c.config_id, c.file_name, c.active FROM public.configs c INNER JOIN public.gateways g ON c.gateway_id = g.gateway_id WHERE c.active = true LIMIT 10; SELECT g.name AS gateway_name, c.config_id, c.file_name, c.active FROM public.configs c INNER JOIN public.gateways g ON c.gateway_id = g.gateway_id WHERE c.active = true ORDER BY c.config_id; SELECT g.name AS gateway_name, c.config_id, c.file_name, c.active FROM public.configs c INNER JOIN public.gateways g ON c.gateway_id = g.gateway_id WHERE c.active = true ORDER BY c.config_id","Source: SQL Agent
+Retrieved active configurations by joining configs with gateways tables, saving the result with columns gateway_name, config_id, file_name, and active status. The dataset contains 24 active config entries.",0,0,80887
+Lister toutes les configs actives avec le nom du gateway et le fichier associé.,"SELECT c.config_id, g.name AS gateway_name, c.file_name FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id WHERE c.active IS TRUE ORDER BY gateway_name, c.file_name;","SELECT g.name AS gateway_name, c.config_id, c.file_name, c.active FROM public.configs c JOIN public.gateways g ON c.gateway_id = g.gateway_id WHERE c.active = true ORDER BY c.config_id","Source: SQL Agent
+Successfully retrieved active configurations from the database showing gateway names, config IDs, and file names for all active configurations. The query returned 24 active configurations currently in use.",0,0,77615
