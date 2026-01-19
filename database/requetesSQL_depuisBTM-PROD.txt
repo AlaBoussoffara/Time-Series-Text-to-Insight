@@ -1,0 +1,40 @@
+###########
+##projects_sites.csv
+
+SELECT p.id, p."name", p.country, p.client_company_name, p.time_zone, p.city, p.start_date, p.description,
+s.*
+FROM public.projects p  
+inner join sites s on s.project_id= p.id
+where p.name like '%M3%' and (s.name like 'MAT' or s.name like 'MAT_Avois%'  or s.name like 'MAT_LA%' or s.name like 'MAT_Topo%' or s.name like 'MAT_Sono%'  or s.name like 'MAT_Corps%')
+###########
+
+###########
+##gateways_configs_sensors.csv
+
+SELECT g.*, c.*, s.*
+FROM public.projects p  
+inner join sites s on s.project_id= p.id
+inner join sites_gateways sg on sg.site_id=s.id
+inner join gateways g on g.id=sg.gateway_id
+inner join configs c on c.gateway_id=g.id
+inner join sensors si on si.site_gateway_id=sg.id
+where p.name like '%M3%' and (s.name like 'MAT' or s.name like 'MAT_Avois%'  or s.name like 'MAT_LA%' or s.name like 'MAT_Topo%' or s.name like 'MAT_Sono%'  or s.name like 'MAT_Corps%')
+###########
+
+###########
+## variables_metrics_raw_data-1760453175763.csv
+
+SELECT g.gateway_name, v.name as variable_name, v.alias as variable_alias , v.sensor_id as sensor_id, rd.value, rd.timestamp,rd.variable_id as variable_id, m.unit,m.metric
+FROM public.projects p  
+inner join sites s on s.project_id= p.id
+inner join sites_gateways sg on sg.site_id=s.id
+inner join gateways g on g.id=sg.gateway_id
+left join configs c on c.gateway_id=g.id
+left join sensors si on si.site_gateway_id=sg.id
+left join variables v on v.sensor_id=si.id
+inner join metrics m on m.id=v.metric_id
+inner join raw_data rd on rd.variable_id =v.id
+where p.name like '%M3%' and (s.name like 'MAT')
+and rd.timestamp between '2024-11-20 10:00:00.000 +0200' and '2025-05-20 10:00:00.000 +0200'
+and ( g.gateway_name='Gateway-Tisséo Ligne A' or g.gateway_name='MAT_INCLINO' or g.gateway_name='MAT_LA_STA1_Custom' )
+###########

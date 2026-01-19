@@ -24,7 +24,7 @@ def build_supervisor_graph() -> StateGraph:
     
     supervisor_llm = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0").with_structured_output(SupervisorOutput)
     
-    sql_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
+    sql_llm = llm_from("aws", "anthropic.claude-4-5-sonnet-20241022-v2:0")
     #analysis_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0")
     #visualization_llm = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0")
     
