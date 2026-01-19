@@ -5,55 +5,16 @@
       "name": "site_id",
       "type": "integer",
       "nullable": false,
-      "description": ""
+      "description": "Identifier of the site."
     },
     {
       "name": "gateway_id",
       "type": "integer",
       "nullable": false,
-      "description": ""
+      "description": "Identifier of the gateway assigned to (or deployed on) the site."
     }
   ],
-  "sample_rows": [
-    {
-      "site_id": 1087,
-      "gateway_id": 2626
-    },
-    {
-      "site_id": 1087,
-      "gateway_id": 4975
-    },
-    {
-      "site_id": 1055,
-      "gateway_id": 5260
-    },
-    {
-      "site_id": 1055,
-      "gateway_id": 3292
-    },
-    {
-      "site_id": 1087,
-      "gateway_id": 2668
-    },
-    {
-      "site_id": 1055,
-      "gateway_id": 5458
-    },
-    {
-      "site_id": 1055,
-      "gateway_id": 2282
-    },
-    {
-      "site_id": 1055,
-      "gateway_id": 4512
-    },
-    {
-      "site_id": 1055,
-      "gateway_id": 6370
-    },
-    {
-      "site_id": 1087,
-      "gateway_id": 4974
-    }
-  ]
+  "description": "Join/association table that models a many-to-many relationship between sites and gateways: one site can have multiple gateways, and the same gateway could potentially be linked to multiple sites (depending on business rules).",
+  "primary_key_note": "Often the composite key is (site_id, gateway_id) .",
+  "sample_rows_note": "Example: site_id=1055 is linked to multiple gateways (5260, 3292, 5458, 2282, 4512, 6370)."
 }

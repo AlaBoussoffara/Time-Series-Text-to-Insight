@@ -140,7 +140,11 @@ def benchmark(
     """Run both agents against provided queries and collect results."""
     if spider_model:
         os.environ["USE_MODEL"] = spider_model
-    sql_llm = llm_from(provider, sql_model).with_structured_output(SQLAgentOutput)
+    sql_llm = llm_from(
+        provider,
+        sql_model,
+        agent_name="SQL Agent",
+    ).with_structured_output(SQLAgentOutput)
     sql_agent = create_sql_agent(sql_llm)
     spider_agent = PromptAgentAdapter()
 

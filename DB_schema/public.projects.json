@@ -5,61 +5,50 @@
       "name": "project_id",
       "type": "integer",
       "nullable": false,
-      "description": ""
+      "description": "Unique identifier of the project record (primary key)."
     },
     {
       "name": "name",
       "type": "text",
       "nullable": true,
-      "description": ""
+      "description": "Project name/title (often includes internal codes and client/site naming)."
     },
     {
       "name": "country",
       "type": "text",
       "nullable": true,
-      "description": ""
+      "description": "Country where the project is located."
     },
     {
       "name": "client_company_name",
       "type": "text",
       "nullable": true,
-      "description": ""
+      "description": "Client company name associated with the project."
     },
     {
       "name": "time_zone",
       "type": "text",
       "nullable": true,
-      "description": ""
+      "description": "IANA time zone used for the project (e.g., 'Europe/Paris') to interpret dates/timestamps."
     },
     {
       "name": "city",
       "type": "text",
       "nullable": true,
-      "description": ""
+      "description": "City where the project is located."
     },
     {
       "name": "start_date",
       "type": "text",
       "nullable": true,
-      "description": ""
+      "description": "Project start date (as stored; appears to be a string, e.g., '31/01/2023')."
     },
     {
       "name": "description",
       "type": "text",
       "nullable": true,
-      "description": ""
+      "description": "Free-text description of the project scope/context."
     }
   ],
-  "sample_rows": [
-    {
-      "project_id": 511,
-      "name": "M3-GC03 TISSEO",
-      "country": "France",
-      "client_company_name": "LIGAM",
-      "time_zone": "Europe/Paris",
-      "city": "Toulouse",
-      "start_date": "31/01/2023",
-      "description": "Monitoring en phase de construction sur le lot M3-GC03"
-    }
-  ]
+  "sample_rows_note": "The example shows a construction monitoring project in Toulouse (France) with a start date stored as DD/MM/YYYY text."
 }

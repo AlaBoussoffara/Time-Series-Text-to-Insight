@@ -7,7 +7,7 @@
     },
     {
       "role": "expert",
-      "question": "Pour un fichier de mesures donné ( Surface_MAT_STA2.dat), récupérer les informations de connexion FTP (IP, user, répertoire).",
+      "question": "Pour le fichier de mesures donné ( Surface_MAT_STA2.dat), récupérer les informations de connexion FTP (IP, user, répertoire).",
       "sql": "SELECT c.config_id, c.gateway_id, c.ftp, c.ftp_ip, c.ftp_user, c.ftp_directory FROM public.configs c WHERE c.file_name = 'Surface_MAT_STA2.dat';"
     },
     {
@@ -144,7 +144,7 @@
       "role": "analyste",
       "question": "Compter le nombre de capteurs distincts (sensor_id) par gateway dans les mesures.",
       "sql": "SELECT gateway_name, COUNT(DISTINCT sensor_id) AS sensor_count FROM public.raw_measurements GROUP BY gateway_name ORDER BY sensor_count DESC;"
-    }
+    },
     {
       "role": "operateur",
       "question": "Quelles sont les tables disponibles dans la base de données ?",

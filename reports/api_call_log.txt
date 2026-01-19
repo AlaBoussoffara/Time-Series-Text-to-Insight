@@ -1,0 +1,46 @@
+2026-01-12T13:29:34 request=03cec2d1e4e74e17941646d224286578 API calls for request 1: SQL Agent=14 | Supervisor=6 | total=20
+2026-01-12T13:30:42 request=bf96a869567b4ac0a301b56dd574af11 API calls for request 2: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-12T13:31:52 request=71896990d53f4b169a354f4214179e0f API calls for request 3: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-12T14:40:15 request=6edba76eeef641b1992514c2a6077171 API calls for request 1: SQL Agent=14 | Supervisor=5 | total=19
+2026-01-12T14:40:26 request=4698bdd1f824402f91b0950434a130d1 API calls for request 2: Supervisor=3 | total=3
+2026-01-12T14:41:45 request=032ec3a306b043fa937670b704a2fb22 API calls for request 3: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-12T14:44:24 request=dc49f81fb9d543598227588bb1caa3c7 API calls for request 1: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-12T14:46:52 request=68c8f8ac97b1421ebc635ba79f4b76b6 API calls for request 2: Spider Agent=28 | Supervisor=7 | total=35
+2026-01-12T14:48:40 request=58cec756c9724c94900aa75919752b97 API calls for request 3: Spider Agent=15 | Supervisor=5 | total=20
+2026-01-12T15:00:18 request=92a3d02f969b4b5ebc403c2efa0e0031 API calls for request 1: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-12T15:00:33 request=f50d285876734a40a64c791a836a03cd API calls for request 2: Supervisor=3 | total=3
+2026-01-12T15:03:50 request=b4fc6153aa4d4cd092e3cb0d15e88e1c API calls for request 3: Spider Agent=13 | Supervisor=6 | total=19
+2026-01-12T15:09:02 request=494e24be60674aff871f48d8cfdecff9 API calls for request 1: Spider Agent=30 | Supervisor=6 | total=36
+2026-01-12T15:09:15 request=c1768a3771f04fc38f810422b8141220 API calls for request 2: Supervisor=3 | total=3
+2026-01-12T15:10:33 request=59df6067c024469299d03758b562d20c API calls for request 3: Spider Agent=15 | Supervisor=5 | total=20
+2026-01-12T15:13:00 request=691aebce1dbe4fcda591be93996517e7 API calls for request 1: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-12T15:14:10 request=43b68b54e64b47efa3833611391b0f14 API calls for request 2: SQL Agent=10 | Supervisor=5 | total=15
+2026-01-12T15:15:34 request=696c6c479f344ab8afe1b4c54aba050f API calls for request 3: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-12T15:42:02 request=489483a582964b10935aaecb7876dfc6 API calls for request 1: Spider Agent=45 | Supervisor=8 | total=53
+2026-01-12T15:42:26 request=3eb487f5d2c54eb3a9919a5a6cddcffa API calls for request 2: Spider Agent=3 | Supervisor=3 | total=6
+2026-01-12T15:47:39 request=718b9d051fca47e7b57e6f2ab3cfcd17 API calls for request 1: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-12T15:47:51 request=6aa7943479684fd384c36d477edf9ea2 API calls for request 2: Supervisor=3 | total=3
+2026-01-12T15:49:08 request=1405f06a528e4aebb86e667de79dc1c7 API calls for request 3: Spider Agent=15 | Supervisor=5 | total=20
+2026-01-12T15:52:58 request=fc4a6e1068104c35b5f09bc0cd4f1515 API calls for request 1: Spider Agent=30 | Supervisor=7 | total=37
+2026-01-12T15:54:09 request=84f5e37c23aa44acafd3e8f59317d57d API calls for request 2: Spider Agent=15 | Supervisor=5 | total=20
+2026-01-12T15:55:36 request=aa5fb610a3f046b8a53e996643c2e031 API calls for request 3: Spider Agent=12 | Supervisor=6 | total=18
+2026-01-12T16:05:52 request=42d8ceba6ca64c4d8eddc807df66ad52 API calls for request 1: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-12T16:07:34 request=c73d0a682cd8420d8d24e577355da42f API calls for request 2: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-12T16:08:54 request=10d8ee0fa1f04ee891ddcb95180aa180 API calls for request 3: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-12T16:25:43 request=8c633f73d844467b8acc0a66ba067ffd API calls for request 1: Spider Agent=15 | Supervisor=5 | total=20
+2026-01-12T16:27:27 request=cc10f168c8bc4869a9d0a2a268b9e18c API calls for request 2: Spider Agent=15 | Supervisor=5 | total=20
+2026-01-12T16:29:03 request=6e22df9bde1d4f4babf63f5e7e1a4914 API calls for request 3: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-14T09:18:20 request=577295618c86460482b48fe538a84d4c API calls for request 1: SQL Agent=14 | Supervisor=6 | total=20
+2026-01-14T09:19:29 request=837ea58b4a8f41e4863790724d2ed95e API calls for request 2: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-14T09:20:42 request=e5b7d22d8b9846099c65d2a208a1866b API calls for request 3: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-14T10:00:48 request=5f5b73c81e954bcf952e38c476b51ee6 API calls for request 1: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-14T10:01:52 request=ccfa544a3b614291961480d63f3b0d46 API calls for request 2: SQL Agent=10 | Supervisor=5 | total=15
+2026-01-14T10:06:59 request=4c7a7126559f4333a934615086cb7147 API calls for request 1: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-14T10:07:49 request=0fb402d47bc9456482bad20129b3f626 API calls for request 2: SQL Agent=7 | Supervisor=5 | total=12
+2026-01-14T10:21:07 request=50fa985d769a4d46a06c35b573905666 API calls for request 1: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-14T10:21:12 request=bb4bdf3336b843bca394532b246a9da0 API calls for request 2: Supervisor=1 | total=1
+2026-01-14T10:22:46 request=e13575606b374c50a93d038084e8350b API calls for request 1: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-14T10:39:02 request=a5acc75632e1483ea8f135703b773b2c API calls for request 1: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-14T10:56:56 request=bb5aea6b84e34bddadcf8e2bff27b643 API calls for request 1: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-14T11:00:32 request=a5b8264790584c9bb8b6aa3f487d4714 API calls for request 1: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-14T11:21:20 request=56125d3b3fcc4f93919eb6b98b1ae2cc API calls for request 1: SQL Agent=12 | Supervisor=6 | total=18

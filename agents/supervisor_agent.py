@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Optional, Sequence
+import json
 import os
+import re
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 
@@ -12,6 +14,12 @@ from agents.visualisation_agent import create_visualization_agent
 from utils.general_helpers import format_message, llm_from, stream_graph
 from utils.messages import AgentMessage
 from utils.states import GlobalState
+from utils.token_counter import (
+    get_token_usage,
+    print_token_usage,
+    reset_token_usage,
+    wrap_llm_with_token_counter,
+)
 from utils.output_basemodels import *
 from utils.datastore import DATASTORE, DataStore
 
@@ -19,11 +27,29 @@ from utils.datastore import DATASTORE, DataStore
 def build_supervisor_graph() -> StateGraph:
     """Build and compile the Supervisor graph."""
     
-    supervisor_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0").with_structured_output(SupervisorOutput)
+    supervisor_llm = llm_from(
+        "aws",
+        "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        agent_name="Supervisor",
+    ).with_structured_output(SupervisorOutput)
     
-    sql_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0").with_structured_output(SQLAgentOutput)
-    analysis_llm = llm_from("aws", "anthropic.claude-3-5-sonnet-20241022-v2:0").with_structured_output(AnalysisAgentOutput)
-    visualization_llm = llm_from("aws", "anthropic.claude-3-haiku-20240307-v1:0").with_structured_output(VisualizationPlanOutput)
+    sql_llm = wrap_llm_with_token_counter(
+        llm_from(
+            "aws",
+            "anthropic.claude-3-5-sonnet-20241022-v2:0",
+            agent_name="SQL Agent",
+        )
+    ).with_structured_output(SQLAgentOutput)
+    analysis_llm = llm_from(
+        "aws",
+        "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        agent_name="Analysis Agent",
+    ).with_structured_output(AnalysisAgentOutput)
+    visualization_llm = llm_from(
+        "aws",
+        "anthropic.claude-3-haiku-20240307-v1:0",
+        agent_name="Visualization Agent",
+    ).with_structured_output(VisualizationPlanOutput)
     
     if os.getenv("SQL_AGENT_MODE") == "SPIDER" :
         sql_agent = PromptAgentAdapter()
@@ -232,41 +258,55 @@ def run_supervisor(
     log: bool = True,
 ):
     """Execute the Supervisor graph and return the final message."""
-    compiled_graph = build_supervisor_graph()
-    SUPERVISOR_PROMPT_TEXT = Path("prompts/supervisor_prompt.txt"
-                                  ).read_text(encoding="utf-8")
+    reset_api_call_count()
+    reset_token_usage()
+    try:
+        compiled_graph = build_supervisor_graph()
+        SUPERVISOR_PROMPT_TEXT = Path("prompts/supervisor_prompt.txt"
+                                      ).read_text(encoding="utf-8")
 
-    messages: list[BaseMessage] = [SystemMessage(SUPERVISOR_PROMPT_TEXT)]
-    if history:
-        for msg in history:
-            if isinstance(msg, BaseMessage):
-                messages.append(msg)
-    messages.append(HumanMessage(user_input))
-    global_state = {
-        "global_messages_history": messages,
-        "datastore": DATASTORE,
-        "database_schema": {},
-    }
+        messages: list[BaseMessage] = [SystemMessage(SUPERVISOR_PROMPT_TEXT)]
+        if history:
+            for msg in history:
+                if isinstance(msg, BaseMessage):
+                    messages.append(msg)
+        messages.append(HumanMessage(user_input))
+        global_state = {
+            "global_messages_history": messages,
+            "datastore": DATASTORE,
+            "database_schema": {},
+        }
 
-    final_messages = stream_graph(compiled_graph, global_state, log=log)
-    visualization_artifacts: list[dict] = []
-    for message in final_messages:
-        if isinstance(message, AgentMessage) and getattr(message, "name", "") == "Visualization Agent":
-            structured = message.structured_output
-            chart_path = structured.get("chart_path")
-            if chart_path:
-                visualization_artifacts.append(
-                    {
-                        "chart_path": chart_path,
-                        "warnings": structured.get("warnings", []),
-                        "summary": structured.get("output_content"),
-                        "error_message": structured.get("error_message"),
-                    }
-                )
-    final_response = final_messages[-2]
-    if visualization_artifacts:
-        setattr(final_response, "visualizations", visualization_artifacts)
-    return final_response
+        final_messages = stream_graph(compiled_graph, global_state, log=log)
+        visualization_artifacts: list[dict] = []
+        for message in final_messages:
+            if isinstance(message, AgentMessage) and getattr(message, "name", "") == "Visualization Agent":
+                structured = message.structured_output
+                chart_path = structured.get("chart_path")
+                if chart_path:
+                    visualization_artifacts.append(
+                        {
+                            "chart_path": chart_path,
+                            "warnings": structured.get("warnings", []),
+                            "summary": structured.get("output_content"),
+                            "error_message": structured.get("error_message"),
+                        }
+                    )
+        final_response = final_messages[-2]
+        request_log = _build_request_log(user_input, final_messages)
+        _append_request_log(request_log)
+        if visualization_artifacts:
+            setattr(final_response, "visualizations", visualization_artifacts)
+        return final_response
+    finally:
+        print_api_call_breakdown("API calls for request")
+        append_api_call_log("API calls for request")
+        token_label = (
+            "Spider tokens for request"
+            if os.getenv("SQL_AGENT_MODE") == "SPIDER"
+            else "SQL tokens for request"
+        )
+        print_token_usage(token_label)
 
 
 if __name__ == "__main__":
