@@ -7,6 +7,7 @@ from langchain_core.messages import BaseMessage
 from langchain_mistralai import ChatMistralAI
 from langchain_ollama import ChatOllama
 
+from utils.api_call_counter import wrap_llm_with_api_call_counter
 from utils.messages import AgentMessage
 
 PROVIDER_LIST = ["aws", "mistral", "ollama"]
@@ -20,21 +21,29 @@ PROVIDER = os.getenv("USE_PROVIDER", "aws")
 MODEL_NAME = os.getenv("USE_MODEL", "anthropic.claude-3-5-sonnet-20241022-v2:0")
 
 
-def llm_from(provider: str = PROVIDER, model_name: str = MODEL_NAME):
+def llm_from(
+    provider: str = PROVIDER,
+    model_name: str = MODEL_NAME,
+    *,
+    agent_name: str | None = None,
+):
     """Initialize and return a language model based on the specified provider and model name."""
     if provider not in PROVIDER_LIST:
         raise ValueError('choose from "aws", "mistral" or "ollama"')
     if provider == "aws":
-        return ChatBedrock(model_id=model_name, region_name="us-west-2")
-    if provider == "mistral":
+        llm = ChatBedrock(model_id=model_name, region_name="us-west-2")
+    elif provider == "mistral":
         api_key = os.getenv("MISTRAL_API_KEY")
-        return ChatMistralAI(
+        llm = ChatMistralAI(
             model=model_name,
             api_key=api_key,
             temperature=0
         )
-    if provider == "ollama":
-        return ChatOllama(model=model_name, temperature=0)
+    elif provider == "ollama":
+        llm = ChatOllama(model=model_name, temperature=0)
+    else:
+        raise ValueError('choose from "aws", "mistral" or "ollama"')
+    return wrap_llm_with_api_call_counter(llm, agent_name=agent_name)
 
 
 def format_message(message: BaseMessage) -> tuple[str, Optional[str], str]:

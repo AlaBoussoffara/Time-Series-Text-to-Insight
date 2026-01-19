@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List
 
+import json
 import pandas as pd
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
@@ -11,6 +12,126 @@ from utils.sql_utils import connect_postgres, execute_sql_tool
 from utils.states import SQLState
 from utils.messages import AgentMessage
 
+
+def _load_schema_from_db_schema(db_schema_dir: Path) -> Dict[str, List[Dict[str, Any]]]:
+    schema: Dict[str, List[Dict[str, Any]]] = {}
+    if not db_schema_dir.exists() or not db_schema_dir.is_dir():
+        return schema
+
+    for json_path in sorted(db_schema_dir.glob("*.json")):
+        try:
+            payload = json.loads(json_path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+
+        table = str(payload.get("table") or json_path.stem).strip()
+        if not table:
+            continue
+
+        raw_columns = payload.get("columns")
+        if not isinstance(raw_columns, list):
+            continue
+
+        columns: List[Dict[str, Any]] = []
+        for raw_column in raw_columns:
+            if not isinstance(raw_column, dict):
+                continue
+            name = str(raw_column.get("name", "")).strip()
+            if not name:
+                continue
+
+            entry: Dict[str, Any] = {"name": name}
+            col_type = raw_column.get("type")
+            if col_type is not None:
+                entry["type"] = str(col_type).strip()
+            nullable = raw_column.get("nullable")
+            if isinstance(nullable, bool):
+                entry["nullable"] = nullable
+            description = str(raw_column.get("description", "")).strip()
+            if description:
+                entry["description"] = description
+            columns.append(entry)
+
+        if columns:
+            schema[table] = columns
+
+    return schema
+
+
+def _load_schema_from_information_schema() -> Dict[str, List[Dict[str, Any]]]:
+    try:
+        conn = connect_postgres()
+    except Exception:
+        return {}
+
+    schema: Dict[str, List[Dict[str, Any]]] = {}
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT table_schema, table_name, column_name, data_type, is_nullable
+                FROM information_schema.columns
+                WHERE table_schema NOT IN ('pg_catalog','information_schema')
+                ORDER BY table_schema, table_name, ordinal_position
+                """
+            )
+            for schema_name, table_name, column_name, data_type, is_nullable in cur.fetchall():
+                table = f"{schema_name}.{table_name}"
+                schema.setdefault(table, []).append(
+                    {
+                        "name": column_name,
+                        "type": data_type,
+                        "nullable": is_nullable == "YES",
+                    }
+                )
+    except Exception:
+        return {}
+    finally:
+        try:
+            conn.close()  # type: ignore[union-attr]
+        except Exception:
+            pass
+
+    return schema
+
+
+def _load_database_schema_snapshot() -> tuple[Dict[str, List[Dict[str, Any]]], str]:
+    schema = _load_schema_from_db_schema(Path("DB_schema"))
+    if schema:
+        return schema, "DB_schema/*.json"
+
+    schema = _load_schema_from_information_schema()
+    if schema:
+        return schema, "information_schema"
+
+    return {}, "unavailable"
+
+
+def _format_database_schema_summary(schema: Dict[str, List[Dict[str, Any]]]) -> str:
+    if not schema:
+        return "Database schema: unavailable."
+
+    lines: List[str] = ["Database schema (authoritative):"]
+    for table_name in sorted(schema.keys()):
+        columns = schema.get(table_name) or []
+        rendered_cols: List[str] = []
+        for col in columns:
+            name = str(col.get("name", "")).strip()
+            col_type = str(col.get("type", "")).strip()
+            if not name:
+                continue
+            rendered_cols.append(f"{name} {col_type}".strip())
+        if rendered_cols:
+            lines.append(f"- {table_name}: " + ", ".join(rendered_cols))
+
+    raw_measurements = schema.get("public.raw_measurements") or []
+    for col in raw_measurements:
+        if str(col.get("name", "")).strip().lower() == "timestamp":
+            lines.append('Note: `raw_measurements` has a column named `timestamp`; reference it as `"timestamp"` in SQL.')
+            break
+
+    return "\n".join(lines)
+
 def create_sql_agent(llm):
     """
     Build the minimal SQL controller graph.
@@ -19,10 +140,7 @@ def create_sql_agent(llm):
         messages: List[AnyMessage] = list(state.get("messages", []))
         if not messages:
             PROMPT_PATH = Path("prompts/sql_agent_prompt.txt")
-            SQL_AGENT_PROMPT_TEXT = PROMPT_PATH.read_text(encoding="utf-8")
-            DATABASE_PROMPT_PATH = Path("prompts/database_prompt.txt")
-            DATABASE_CONTEXT = DATABASE_PROMPT_PATH.read_text(encoding="utf-8")
-            system_prompt = SQL_AGENT_PROMPT_TEXT.replace("{database_context}", DATABASE_CONTEXT)
+            system_prompt = PROMPT_PATH.read_text(encoding="utf-8")
             messages.append(SystemMessage(system_prompt))
         instruction = state.get("instruction", "")
         if instruction:
@@ -74,6 +192,10 @@ def create_sql_agent(llm):
         if not isinstance(structured_output, dict):
             structured_output = {}
         sql_query = str(structured_output.get("sql_query")).strip()
+        if sql_query:
+            print(f"[SQL Agent] execute_sql: {sql_query}")
+        else:
+            print("[SQL Agent] execute_sql: EMPTY QUERY")
         query_log = list(state.get("query_log", []))
         result: Any
         if sql_query:
@@ -151,6 +273,7 @@ def create_sql_agent(llm):
     def summarize_datastore_updates_node(state: SQLState) -> SQLState:
         query_log = list(state.get("query_log", []))
         datastore_obj = state.get("datastore")
+        schema_shared = bool(state.get("database_schema_shared"))
 
         datastore_summary_parts: List[str] = []
         if isinstance(datastore_obj, DataStore):
@@ -224,13 +347,35 @@ def create_sql_agent(llm):
             "output_type": "summarize_datastore_updates_tool",
             "output_content": summary_text,
         }
+        state_updates: Dict[str, Any] = {}
+        if not schema_shared:
+            database_schema, schema_source = _load_database_schema_snapshot()
+            schema_summary = _format_database_schema_summary(database_schema)
+            payload["output_content"] = (
+                f"{summary_text} Database schema snapshot included (source: {schema_source})."
+            )
+            payload.update(
+                {
+                    "database_schema_source": schema_source,
+                    "database_schema_summary": schema_summary,
+                    "database_schema": database_schema,
+                }
+            )
+            state_updates.update(
+                {
+                    "database_schema_source": schema_source,
+                    "database_schema_summary": schema_summary,
+                    "database_schema": database_schema,
+                    "database_schema_shared": True,
+                }
+            )
 
         message = AgentMessage(
             name="summarize datastore updates",
             structured_output=payload,
         )
         print(f"[SQL Agent] summarize_datastore_updates_tool: {summary_text}")
-        return {"messages": [message]}
+        return {"messages": [message], **state_updates}
 
     def persist_dataset_node(state: SQLState) -> SQLState:
         last_message = state["messages"][-1]

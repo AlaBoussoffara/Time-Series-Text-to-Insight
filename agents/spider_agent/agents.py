@@ -22,6 +22,7 @@ from prompts.spider_agent_prompt import POSTGRES_SYSTEM, LOCAL_SYSTEM, DBT_SYSTE
 from agents.spider_agent.action import Action, Bash, Terminate, CreateFile, EditFile, LOCAL_DB_SQL, POSTGRES_EXEC_SQL, POSTGRES_GET_TABLES, POSTGRES_GET_TABLE_INFO, POSTGRES_SAMPLE_ROWS
 # from spider_agent.envs.spider_agent import Spider_Agent_Env
 from utils.general_helpers import llm_from
+from utils.token_counter import wrap_llm_with_token_counter
 
 
 from typing import Dict, List, Optional, Tuple, Any, TypedDict
@@ -120,7 +121,13 @@ class PromptAgent:
                     }
                 ]
             })
-            spider_llm = llm_from(os.getenv("USE_PROVIDER"), os.getenv("USE_MODEL"))
+            spider_llm = wrap_llm_with_token_counter(
+                llm_from(
+                    os.getenv("USE_PROVIDER"),
+                    os.getenv("USE_MODEL"),
+                    agent_name="Spider Agent",
+                )
+            )
             
             try:
                 msg = spider_llm.invoke(messages)
