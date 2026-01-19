@@ -9,7 +9,6 @@ from agents.analysis_agent import create_analysis_agent
 from agents.spider_sql_agent import PromptAgentAdapter
 from agents.sql_agent import create_sql_agent
 from agents.visualisation_agent import create_visualization_agent
-from agents.visualisation_codegen_agent import create_visualization_codegen_agent
 from utils.general_helpers import llm_from, stream_graph
 from utils.messages import AgentMessage
 from utils.states import GlobalState
@@ -31,38 +30,21 @@ def build_supervisor_graph() -> StateGraph:
     """Build and compile the Supervisor graph."""
     
     supervisor_llm = llm_from(
-        "aws",
-        "anthropic.claude-3-5-sonnet-20241022-v2:0",
         agent_name="Supervisor",
     ).with_structured_output(SupervisorOutput)
     
     sql_llm = wrap_llm_with_token_counter(
         llm_from(
-            "aws",
-            "anthropic.claude-3-5-sonnet-20241022-v2:0",
             agent_name="SQL Agent",
         )
     ).with_structured_output(SQLAgentOutput)
     analysis_llm = llm_from(
-        "aws",
-        "anthropic.claude-3-5-sonnet-20241022-v2:0",
         agent_name="Analysis Agent",
     ).with_structured_output(AnalysisAgentOutput)
-    visualization_mode = os.getenv("VISUALIZATION_AGENT_MODE", "CODE").upper()
-    if visualization_mode == "CODE":
-        visualization_llm = llm_from(
-            "aws",
-            "anthropic.claude-3-5-sonnet-20241022-v2:0",
-            agent_name="Visualization Agent",
-        ).with_structured_output(VisualizationCodeOutput)
-        visualization_agent = create_visualization_codegen_agent(visualization_llm)
-    else:
-        visualization_llm = llm_from(
-            "aws",
-            "anthropic.claude-3-5-sonnet-20241022-v2:0",
-            agent_name="Visualization Agent",
-        ).with_structured_output(VisualizationPlanOutput)
-        visualization_agent = create_visualization_agent(visualization_llm)
+    visualization_llm = llm_from(
+        agent_name="Visualization Agent",
+    ).with_structured_output(VisualizationCodeOutput)
+    visualization_agent = create_visualization_agent(visualization_llm)
     
     if os.getenv("SQL_AGENT_MODE") == "SPIDER" :
         sql_agent = PromptAgentAdapter()

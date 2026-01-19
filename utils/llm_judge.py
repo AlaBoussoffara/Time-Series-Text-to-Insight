@@ -1,3 +1,4 @@
+import os
 from pydantic import BaseModel, Field
 from typing import Optional
 from utils.general_helpers import llm_from
@@ -7,8 +8,15 @@ class JudgeResult(BaseModel):
     reasoning: str = Field(description="Explanation for the score")
 
 class BenchmarkJudge:
-    def __init__(self, provider="aws", model="anthropic.claude-3-5-sonnet-20241022-v2:0"):
-        self.llm = llm_from(provider, model).with_structured_output(JudgeResult)
+    def __init__(self, provider: Optional[str] = None, model: Optional[str] = None):
+        if provider or model:
+            resolved_provider = provider or os.getenv("USE_PROVIDER", "aws")
+            resolved_model = model or os.getenv(
+                "USE_MODEL", "anthropic.claude-3-5-sonnet-20241022-v2:0"
+            )
+            self.llm = llm_from(resolved_provider, resolved_model).with_structured_output(JudgeResult)
+        else:
+            self.llm = llm_from().with_structured_output(JudgeResult)
 
     def judge_sql(self, question: str, ground_truth_sql: str, generated_sql: str) -> JudgeResult:
         """Evaluates the generated SQL against the ground truth."""

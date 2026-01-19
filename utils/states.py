@@ -57,10 +57,14 @@ class VisualizationState(TypedDict, total=False):
     datastore: Any
     datastore_summary: str
     datastore_obj: Any
+    datastore_frames: Dict[str, Any]
+    input_profile: List[Dict[str, Any]]
+    input_profile_summary: str
     chart_plan: Dict[str, Any]
     visualization_code: str
     visualization_code_summary: str
     visualization_codegen_attempts: int
+    visualization_error_context: Optional[str]
     selected_dataset: str
     detected_columns: Dict[str, Any]
     output_path: str

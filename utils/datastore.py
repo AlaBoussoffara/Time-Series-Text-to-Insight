@@ -92,10 +92,18 @@ class DataStore:
             for ref, entry in self._store.items():
                 df = entry.get("df")
                 row_count = len(df) if isinstance(df, pd.DataFrame) else 0
+                columns = [str(col) for col in df.columns] if isinstance(df, pd.DataFrame) else []
+                dtypes = (
+                    {str(col): str(dtype) for col, dtype in df.dtypes.items()}
+                    if isinstance(df, pd.DataFrame)
+                    else {}
+                )
                 snapshot[ref] = {
                     "description": entry.get("description", ""),
                     "row_count": row_count,
                     "datastore_ref": ref,
+                    "columns": columns,
+                    "dtypes": dtypes,
                 }
             return snapshot
 

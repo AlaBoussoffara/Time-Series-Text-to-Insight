@@ -2,8 +2,7 @@ chainlit
 langchain
 langchain-core
 langgraph
-plotly
-kaleido
+matplotlib
 langchain-ollama
 langchain-mistralai
 langchain-community
