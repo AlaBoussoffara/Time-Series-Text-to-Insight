@@ -1,0 +1,191 @@
+{
+  "table": "public.sites",
+  "columns": [
+    {
+      "name": "site_id",
+      "type": "integer",
+      "nullable": false,
+      "description": ""
+    },
+    {
+      "name": "name",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "type",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "extent",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "start_date",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "previsional_end",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "project_id",
+      "type": "integer",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "created_at",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "deleted",
+      "type": "boolean",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "operating_rate",
+      "type": "double precision",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "main_site",
+      "type": "integer",
+      "nullable": true,
+      "description": ""
+    }
+  ],
+  "sample_rows": [
+    {
+      "site_id": 1085,
+      "name": "MAT_Avoisinants",
+      "type": "OTHERS",
+      "extent": null,
+      "start_date": "15/02/2023",
+      "previsional_end": "16/05/2028",
+      "project_id": 511,
+      "created_at": "16/05/2023 10:34",
+      "updated_at": "16/05/2023 10:34",
+      "deleted": false,
+      "operating_rate": 0.0,
+      "main_site": 1055
+    },
+    {
+      "site_id": 1055,
+      "name": "MAT",
+      "type": "GARE",
+      "extent": null,
+      "start_date": "04/04/2023",
+      "previsional_end": "03/05/2028",
+      "project_id": 511,
+      "created_at": "03/05/2023 11:14",
+      "updated_at": "03/05/2023 11:14",
+      "deleted": false,
+      "operating_rate": 0.0,
+      "main_site": null
+    },
+    {
+      "site_id": 1086,
+      "name": "MAT_Topo",
+      "type": "OTHERS",
+      "extent": null,
+      "start_date": "15/02/2023",
+      "previsional_end": "16/05/2028",
+      "project_id": 511,
+      "created_at": "16/05/2023 10:35",
+      "updated_at": "16/05/2023 10:35",
+      "deleted": false,
+      "operating_rate": 0.0,
+      "main_site": 1055
+    },
+    {
+      "site_id": 1087,
+      "name": "MAT_Sono/Vibro",
+      "type": "OTHERS",
+      "extent": null,
+      "start_date": "15/02/2023",
+      "previsional_end": "16/05/2028",
+      "project_id": 511,
+      "created_at": "16/05/2023 10:35",
+      "updated_at": "16/05/2023 10:35",
+      "deleted": false,
+      "operating_rate": 0.0,
+      "main_site": 1055
+    },
+    {
+      "site_id": 2362,
+      "name": "MAT_Corps station_EXT",
+      "type": "OTHERS",
+      "extent": null,
+      "start_date": "08/08/2024",
+      "previsional_end": "08/08/2024",
+      "project_id": 511,
+      "created_at": "08/08/2024 13:05",
+      "updated_at": "08/08/2024 13:05",
+      "deleted": false,
+      "operating_rate": 0.0,
+      "main_site": 1055
+    },
+    {
+      "site_id": 2363,
+      "name": "MAT_Corps station_INF",
+      "type": "OTHERS",
+      "extent": null,
+      "start_date": "08/08/2024",
+      "previsional_end": "08/08/2024",
+      "project_id": 511,
+      "created_at": "08/08/2024 13:05",
+      "updated_at": "08/08/2024 13:05",
+      "deleted": false,
+      "operating_rate": 0.0,
+      "main_site": 1055
+    },
+    {
+      "site_id": 2361,
+      "name": "MAT_Corps station_CVG",
+      "type": "OTHERS",
+      "extent": null,
+      "start_date": "08/08/2024",
+      "previsional_end": "08/08/2024",
+      "project_id": 511,
+      "created_at": "08/08/2024 13:04",
+      "updated_at": "08/08/2024 13:04",
+      "deleted": false,
+      "operating_rate": 0.0,
+      "main_site": 1055
+    },
+    {
+      "site_id": 2423,
+      "name": "MAT_LA-Tiss\u00e9o",
+      "type": "OTHERS",
+      "extent": null,
+      "start_date": "04/09/2024",
+      "previsional_end": "04/09/2024",
+      "project_id": 511,
+      "created_at": "04/09/2024 22:33",
+      "updated_at": "04/09/2024 22:33",
+      "deleted": false,
+      "operating_rate": 0.0,
+      "main_site": 1055
+    }
+  ]
+}

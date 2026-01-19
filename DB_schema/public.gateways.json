@@ -1,0 +1,267 @@
+{
+  "table": "public.gateways",
+  "columns": [
+    {
+      "name": "gateway_id",
+      "type": "integer",
+      "nullable": false,
+      "description": ""
+    },
+    {
+      "name": "name",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "serial_number",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "transfer_protocol",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "power_supply",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "installation_date",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "operating_team",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "x",
+      "type": "double precision",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "y",
+      "type": "double precision",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "z",
+      "type": "double precision",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "time_zone",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "geom",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "created_at",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "text",
+      "nullable": true,
+      "description": ""
+    },
+    {
+      "name": "provider",
+      "type": "integer",
+      "nullable": true,
+      "description": ""
+    }
+  ],
+  "sample_rows": [
+    {
+      "gateway_id": 2364,
+      "name": "MAT_STA2",
+      "serial_number": null,
+      "transfer_protocol": "FTP",
+      "power_supply": "Main Supply",
+      "installation_date": null,
+      "operating_team": null,
+      "x": null,
+      "y": null,
+      "z": null,
+      "time_zone": "Europe/Paris",
+      "geom": null,
+      "created_at": "2023-05-25 10:09:45.559 +0200",
+      "updated_at": "2023-05-25 10:09:45.559 +0200",
+      "provider": 1
+    },
+    {
+      "gateway_id": 3292,
+      "name": "MAT2_SONO0002",
+      "serial_number": null,
+      "transfer_protocol": "FTP",
+      "power_supply": "Main Supply",
+      "installation_date": null,
+      "operating_team": null,
+      "x": null,
+      "y": null,
+      "z": null,
+      "time_zone": "Europe/Paris",
+      "geom": null,
+      "created_at": "2023-09-13 15:10:55.014 +0200",
+      "updated_at": "2023-09-13 15:10:55.014 +0200",
+      "provider": 1
+    },
+    {
+      "gateway_id": 4512,
+      "name": "MAT_LA_STA1",
+      "serial_number": null,
+      "transfer_protocol": "FTP",
+      "power_supply": "Main Supply",
+      "installation_date": null,
+      "operating_team": null,
+      "x": null,
+      "y": null,
+      "z": null,
+      "time_zone": "Europe/Paris",
+      "geom": null,
+      "created_at": "2024-01-10 12:47:06.107 +0100",
+      "updated_at": "2024-01-10 12:47:06.107 +0100",
+      "provider": 1
+    },
+    {
+      "gateway_id": 5058,
+      "name": "MAT_LA_STA1_Custom",
+      "serial_number": null,
+      "transfer_protocol": "FTP",
+      "power_supply": "Main Supply",
+      "installation_date": null,
+      "operating_team": null,
+      "x": null,
+      "y": null,
+      "z": null,
+      "time_zone": "Europe/Paris",
+      "geom": null,
+      "created_at": "2024-06-11 13:04:04.627 +0200",
+      "updated_at": "2024-06-11 13:04:04.627 +0200",
+      "provider": 1
+    },
+    {
+      "gateway_id": 5259,
+      "name": "MAT_INCLINO",
+      "serial_number": null,
+      "transfer_protocol": "FTP",
+      "power_supply": "Main Supply",
+      "installation_date": null,
+      "operating_team": null,
+      "x": null,
+      "y": null,
+      "z": null,
+      "time_zone": "Europe/Paris",
+      "geom": null,
+      "created_at": "2024-10-01 00:48:47.011 +0200",
+      "updated_at": "2024-10-01 00:48:47.011 +0200",
+      "provider": 1
+    },
+    {
+      "gateway_id": 5260,
+      "name": "MAT_INCLINO_2",
+      "serial_number": null,
+      "transfer_protocol": "FTP",
+      "power_supply": "Main Supply",
+      "installation_date": null,
+      "operating_team": null,
+      "x": null,
+      "y": null,
+      "z": null,
+      "time_zone": "Europe/Paris",
+      "geom": null,
+      "created_at": "2024-10-01 04:24:04.763 +0200",
+      "updated_at": "2024-10-01 04:24:04.763 +0200",
+      "provider": 1
+    },
+    {
+      "gateway_id": 5261,
+      "name": "MAT_INCLINO_4",
+      "serial_number": null,
+      "transfer_protocol": "FTP",
+      "power_supply": "Main Supply",
+      "installation_date": null,
+      "operating_team": null,
+      "x": null,
+      "y": null,
+      "z": null,
+      "time_zone": "Europe/Paris",
+      "geom": null,
+      "created_at": "2024-10-01 04:34:56.539 +0200",
+      "updated_at": "2024-10-01 04:34:56.539 +0200",
+      "provider": 1
+    },
+    {
+      "gateway_id": 5262,
+      "name": "MAT_INCLINO_3",
+      "serial_number": null,
+      "transfer_protocol": "FTP",
+      "power_supply": "Main Supply",
+      "installation_date": null,
+      "operating_team": null,
+      "x": null,
+      "y": null,
+      "z": null,
+      "time_zone": "Europe/Paris",
+      "geom": null,
+      "created_at": "2024-10-01 04:47:00.715 +0200",
+      "updated_at": "2024-10-01 04:47:00.715 +0200",
+      "provider": 1
+    },
+    {
+      "gateway_id": 5458,
+      "name": "MAT_CVG_PM",
+      "serial_number": null,
+      "transfer_protocol": "FTP",
+      "power_supply": "Main Supply",
+      "installation_date": null,
+      "operating_team": null,
+      "x": null,
+      "y": null,
+      "z": null,
+      "time_zone": "Europe/Paris",
+      "geom": null,
+      "created_at": "2024-11-13 10:22:37.633 +0100",
+      "updated_at": "2024-11-13 10:22:37.633 +0100",
+      "provider": 1
+    },
+    {
+      "gateway_id": 2282,
+      "name": "MAT_STA1",
+      "serial_number": null,
+      "transfer_protocol": "FTP",
+      "power_supply": "Main Supply",
+      "installation_date": null,
+      "operating_team": null,
+      "x": null,
+      "y": null,
+      "z": null,
+      "time_zone": "Europe/Paris",
+      "geom": null,
+      "created_at": "2023-05-12 06:40:16.877 +0200",
+      "updated_at": "2023-05-12 06:40:16.877 +0200",
+      "provider": 1
+    }
+  ]
+}

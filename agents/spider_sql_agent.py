@@ -13,6 +13,7 @@ import os
 from utils.datastore import DATASTORE, DataStore
 from utils.sql_utils import connect_postgres, execute_sql_tool
 from utils.messages import AgentMessage
+import subprocess
 
 
 
@@ -57,7 +58,7 @@ class PromptAgentAdapter:
         # 4. TRANSFORM HISTORY (Optional but recommended for comparison)
         # Convert legacy self.thoughts/self.actions into LangChain messages
         # so the Supervisor can see what happened.
-        converted_messages = []
+        converted_messages = [""]
         for i in range(len(self.internal_agent.observations)):
              obs = self.internal_agent.observations[i]
              thought = self.internal_agent.thoughts[i]
@@ -70,10 +71,21 @@ class PromptAgentAdapter:
             # If no observations were generated (e.g. crash or immediate return),
             # ensure we have at least one message to return as the final answer.
             converted_messages.append(AIMessage(content=final_result_string or "No result generated."))
+            
+        # Construct query_log from actions
+        query_log = []
+        for action in self.internal_agent.actions:
+            if type(action).__name__ == 'POSTGRES_EXEC_SQL':
+                query_log.append({
+                    "entry_type": "sql_result",
+                    "sql_query": getattr(action, "sql_query", "")
+                })
+
         return {
             "sql_agent_final_answer": converted_messages[-1],
             "messages": converted_messages, # The trace
-            "datastore": datastore # Pass back the datastore
+            "datastore": datastore, # Pass back the datastore
+            "query_log": query_log 
         }
         
 class MockSpiderEnv:
@@ -108,13 +120,29 @@ class MockSpiderEnv:
                 observation = f"Success. Rows returned: {result_rows}"
             except Exception as e:
                 observation = f"SQL Error: {str(e)}"
+        # 3. Intercept Bash Actions
+        elif type(action).__name__ == 'Bash':
+            try:
+                # Execute the bash command
+                result = subprocess.run(action.code, shell=True, capture_output=True, text=True, timeout=30)
+                observation = ""
+                if result.stdout:
+                    observation += f"Stdout: {result.stdout}"
+                if result.stderr:
+                    if observation:
+                        observation += "\n"
+                    observation += f"Stderr: {result.stderr}"
+                if not observation:
+                    observation = "Command executed successfully with no output."
+            except Exception as e:
+                observation = f"Bash Error: {str(e)}"
 
-        # 3. Intercept Termination
+        # 4. Intercept Termination
         elif type(action).__name__ == 'Terminate':
             done = True
             observation = action.output # The final answer text
 
-        # 4. Default/Fallbacks
+        # 5. Default/Fallbacks
         else:
             observation = f"Action {type(action).__name__} executed (simulated)"
 

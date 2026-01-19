@@ -1,0 +1,204 @@
+{
+  "benchmark_queries": [
+    {
+      "role": "expert",
+      "question": "Lister toutes les configs actives avec le nom du gateway et le fichier associé.",
+      "sql": "SELECT c.config_id, g.name AS gateway_name, c.file_name FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id WHERE c.active IS TRUE ORDER BY gateway_name, c.file_name;"
+    },
+    {
+      "role": "expert",
+      "question": "Pour un fichier de mesures donné ( Surface_MAT_STA2.dat), récupérer les informations de connexion FTP (IP, user, répertoire).",
+      "sql": "SELECT c.config_id, c.gateway_id, c.ftp, c.ftp_ip, c.ftp_user, c.ftp_directory FROM public.configs c WHERE c.file_name = 'Surface_MAT_STA2.dat';"
+    },
+    {
+      "role": "analyste",
+      "question": "Obtenir, pour chaque gateway, la dernière date de traitement de config .",
+      "sql": "SELECT c.gateway_id, g.name AS gateway_name, MAX(c.last_treatment::timestamptz) AS last_treatment_ts FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id GROUP BY c.gateway_id, g.name ORDER BY last_treatment_ts DESC;"
+    },
+    {
+      "role": "analyste",
+      "question": "Identifier les configs qui n'ont jamais été traitées ou dont le dernier traitement remonte à plus de 24h.",
+      "sql": "SELECT c.config_id, g.name AS gateway_name, c.file_name, c.last_treatment FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id WHERE c.last_treatment IS NULL OR c.last_treatment::timestamptz < NOW() - INTERVAL '24 hours' ORDER BY c.last_treatment NULLS FIRST;"
+    },
+    {
+      "role": "expert",
+      "question": "Compter le nombre de variables déclarées dans le payload de chaque config_id.",
+      "sql": "SELECT c.config_id, g.name AS gateway_name, jsonb_array_length(COALESCE(NULLIF(c.payload,'null'), '[]')::jsonb) AS payload_variable_count FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id ORDER BY payload_variable_count DESC, c.config_id;"
+    },
+    {
+      "role": "expert",
+      "question": "Identifier les configs actives dont le payload est vide ou null (configs actives mais sans variables).",
+      "sql": "SELECT c.config_id, g.name AS gateway_name, c.file_name FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id WHERE c.active IS TRUE AND jsonb_array_length(COALESCE(NULLIF(c.payload,'null'), '[]')::jsonb) = 0;"
+    },
+    {
+      "role": "expert",
+      "question": "Lister les configs explicitement inactives avec leur date de dernière mise à jour.",
+      "sql": "SELECT c.config_id, g.name AS gateway_name, c.file_name, c.updated_at FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id WHERE c.active IS FALSE ORDER BY c.updated_at DESC NULLS LAST;"
+    },
+    {
+      "role": "expert",
+      "question": "Lister les gateways qui n'ont aucune config associée (gateways déclarés mais non configurés).",
+      "sql": "SELECT g.gateway_id, g.name FROM public.gateways g WHERE NOT EXISTS (SELECT 1 FROM public.configs c WHERE c.gateway_id = g.gateway_id) ORDER BY g.gateway_id;"
+    },
+    {
+      "role": "expert",
+      "question": "Compter le nombre de configs par adresse FTP (ftp_ip) pour évaluer la charge par endpoint.",
+      "sql": "SELECT c.ftp_ip, COUNT(*) AS config_count FROM public.configs c GROUP BY c.ftp_ip ORDER BY config_count DESC, c.ftp_ip;"
+    },
+    {
+      "role": "expert",
+      "question": "Détecter les variable_id dupliquées dans le payload pour un même gateway (incohérences de mapping).",
+      "sql": "WITH payload_vars AS (SELECT c.gateway_id, g.name AS gateway_name, c.config_id, (elem->>'variable_id')::bigint AS variable_id FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id CROSS JOIN LATERAL jsonb_array_elements(COALESCE(NULLIF(c.payload,'null'), '[]')::jsonb) AS elem) SELECT gateway_id, gateway_name, variable_id, COUNT(*) AS occurrences FROM payload_vars GROUP BY gateway_id, gateway_name, variable_id HAVING COUNT(*) > 1 ORDER BY occurrences DESC, gateway_id;"
+    },
+    {
+      "role": "expert",
+      "question": "Pour chaque gateway, récupérer la config la plus récente selon le champ last_modified.",
+      "sql": "SELECT DISTINCT ON (c.gateway_id) c.gateway_id, g.name AS gateway_name, c.config_id, c.file_name, c.last_modified::timestamptz AS last_modified_ts FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id ORDER BY c.gateway_id, c.last_modified::timestamptz DESC;"
+    },
+    {
+      "role": "operateur",
+      "question": "Afficher la cartographie projet -> site -> gateway (vision globale des installations).",
+      "sql": "SELECT p.project_id, p.name AS project_name, s.site_id, s.name AS site_name, g.gateway_id, g.name AS gateway_name FROM public.projects p JOIN public.sites s ON s.project_id = p.project_id LEFT JOIN public.site_gateways sg ON sg.site_id = s.site_id LEFT JOIN public.gateways g ON g.gateway_id = sg.gateway_id ORDER BY project_name, site_name, gateway_name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Lister les gateways installés sur le site MAT.",
+      "sql": "SELECT s.name AS site_name, g.gateway_id, g.name AS gateway_name FROM public.sites s JOIN public.site_gateways sg ON sg.site_id = s.site_id JOIN public.gateways g ON g.gateway_id = sg.gateway_id WHERE s.name = 'MAT' ORDER BY gateway_name;"
+    },
+    {
+      "role": "analyste",
+      "question": "Identifier les sites qui n'ont aucun gateway associé (sites non instrumentés).",
+      "sql": "SELECT s.site_id, s.name AS site_name, p.name AS project_name FROM public.sites s LEFT JOIN public.projects p ON p.project_id = s.project_id WHERE NOT EXISTS (SELECT 1 FROM public.site_gateways sg WHERE sg.site_id = s.site_id) ORDER BY s.site_id;"
+    },
+    {
+      "role": "analyste",
+      "question": "Compter le nombre de gateways par projet (densité d'instrumentation par projet).",
+      "sql": "SELECT p.project_id, p.name AS project_name, COUNT(DISTINCT sg.gateway_id) AS gateway_count FROM public.projects p LEFT JOIN public.sites s ON s.project_id = p.project_id LEFT JOIN public.site_gateways sg ON sg.site_id = s.site_id GROUP BY p.project_id, p.name ORDER BY gateway_count DESC, p.project_id;"
+    },
+    {
+      "role": "analyste",
+      "question": "Mesurer le volume de données collectées par gateway sur les 7 derniers jours.",
+      "sql": "SELECT rm.gateway_name, COUNT(*) AS rows_7d FROM public.raw_measurements rm WHERE rm.'timestamp'::timestamptz >= NOW() - INTERVAL '7 days' GROUP BY rm.gateway_name ORDER BY rows_7d DESC;"
+    },
+    {
+      "role": "analyste",
+      "question": "Détecter les trous de mesures supérieurs à 2h pour le Gateway-Tisséo Ligne A.",
+      "sql": "WITH ordered AS (SELECT gateway_name, variable_id, variable_alias, 'timestamp'::timestamptz AS ts, LAG(\"timestamp\"::timestamptz) OVER (PARTITION BY gateway_name, variable_id ORDER BY \"timestamp\"::timestamptz) AS prev_ts FROM public.raw_measurements WHERE gateway_name = 'Gateway-Tisséo Ligne A') SELECT gateway_name, variable_id, variable_alias, prev_ts, ts, ts - prev_ts AS gap FROM ordered WHERE prev_ts IS NOT NULL AND ts - prev_ts > INTERVAL '2 hours' ORDER BY gap DESC;"
+    },
+    {
+      "role": "analyste",
+      "question": "Calculer la moyenne journalière par alias de variable pour le Gateway-Tisséo Ligne A.",
+      "sql": "SELECT gateway_name, variable_alias, date_trunc('day', 'timestamp'::timestamptz) AS day, AVG(value) AS avg_value FROM public.raw_measurements WHERE gateway_name = 'Gateway-Tisséo Ligne A' GROUP BY gateway_name, variable_alias, day ORDER BY day DESC, variable_alias;"
+    },
+    {
+      "role": "analyste",
+      "question": "Lister toutes les paires (unit, metric) distinctes présentes dans les mesures (types de grandeurs suivies).",
+      "sql": "SELECT DISTINCT unit, metric FROM public.raw_measurements ORDER BY unit, metric;"
+    },
+    {
+      "role": "analyste",
+      "question": "Donner, pour chaque couple (gateway, variable_name), la valeur maximale observée.",
+      "sql": "SELECT gateway_name, variable_name, MAX(value) AS max_value FROM public.raw_measurements GROUP BY gateway_name, variable_name ORDER BY gateway_name, variable_name;"
+    },
+    {
+      "role": "expert",
+      "question": "Identifier les gateways présents dans les mesures mais absents de la table gateways (problème de référentiel).",
+      "sql": "SELECT DISTINCT rm.gateway_name FROM public.raw_measurements rm WHERE NOT EXISTS (SELECT 1 FROM public.gateways g WHERE g.name = rm.gateway_name);"
+    },
+    {
+      "role": "expert",
+      "question": "Lister, par parsing_id, le nombre de configs et les répertoires FTP utilisés .",
+      "sql": "SELECT parsing_id, COUNT(*) AS config_count, STRING_AGG(DISTINCT ftp_directory, '; ') AS ftp_directories FROM public.configs GROUP BY parsing_id ORDER BY parsing_id;"
+    },
+    {
+      "role": "operateur",
+      "question": "Voir la hiérarchie entre sites enfants et sites principaux (ex: sous-sites rattachés à une gare).",
+      "sql": "SELECT child.site_id, child.name AS child_site, parent.site_id AS main_site_id, parent.name AS main_site_name FROM public.sites child LEFT JOIN public.sites parent ON parent.site_id = child.main_site ORDER BY child.site_id;"
+    },
+    {
+      "role": "expert",
+      "question": "Identifier les credentials FTP (IP, user, dossier) réutilisés sur plusieurs configs.",
+      "sql": "SELECT ftp_ip, ftp_user, ftp_directory, COUNT(*) AS reuse_count FROM public.configs GROUP BY ftp_ip, ftp_user, ftp_directory HAVING COUNT(*) > 1 ORDER BY reuse_count DESC, ftp_ip;"
+    },
+    {
+      "role": "expert",
+      "question": "Identifier les gateways qui possèdent plus d'une config active.",
+      "sql": "SELECT c.gateway_id, g.name AS gateway_name, COUNT(*) AS active_config_count FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id WHERE c.active IS TRUE GROUP BY c.gateway_id, g.name HAVING COUNT(*) > 1 ORDER BY active_config_count DESC;"
+    },
+    {
+      "role": "expert",
+      "question": "Lister, pour le gateway  MAT_STA2, l'ensemble de ses configs avec dossier FTP et statut actif/inactif.",
+      "sql": "SELECT g.name AS gateway_name, c.config_id, c.file_name, c.ftp_directory, c.active FROM public.configs c JOIN public.gateways g ON g.gateway_id = c.gateway_id WHERE g.name = 'MAT_STA2' ORDER BY c.file_name;"
+    },
+    {
+      "role": "expert",
+      "question": "Identifier les configs dont le champ last_modified est le plus ancien (top 10) pour repérer les sources figées.",
+      "sql": "SELECT c.config_id, g.name AS gateway_name, c.file_name, c.last_modified::timestamptz AS last_modified_ts FROM public.configs c LEFT JOIN public.gateways g ON g.gateway_id = c.gateway_id ORDER BY c.last_modified::timestamptz ASC NULLS FIRST LIMIT 10;"
+    },
+    {
+      "role": "analyste",
+      "question": "Pour le   Gateway-Tisséo Ligne A, récupérer la dernière mesure disponible pour chaque variable.",
+      "sql": "SELECT DISTINCT ON (rm.variable_id) rm.gateway_name, rm.variable_id, rm.variable_alias, rm.value, rm.unit, rm.\"timestamp\"::timestamptz AS ts FROM public.raw_measurements rm WHERE rm.gateway_name = 'Gateway-Tisséo Ligne A' ORDER BY rm.variable_id, rm.\"timestamp\"::timestamptz DESC;"
+    },
+    {
+      "role": "analyste",
+      "question": "Compter le nombre de capteurs distincts (sensor_id) par gateway dans les mesures.",
+      "sql": "SELECT gateway_name, COUNT(DISTINCT sensor_id) AS sensor_count FROM public.raw_measurements GROUP BY gateway_name ORDER BY sensor_count DESC;"
+    },
+    {
+      "role": "operateur",
+      "question": "Quelles sont les tables disponibles dans la base de données ?",
+      "sql": "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Pour une table donnée (ex: raw_measurements), quelles sont ses colonnes et leurs types ?",
+      "sql": "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'raw_measurements' ORDER BY ordinal_position;"
+    },
+    {
+      "role": "operateur",
+      "question": "Quels projets existent dans la base ?",
+      "sql": "SELECT project_id, name, client_company_name, country, city FROM public.projects ORDER BY name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Quels sont les sites et à quel projet appartiennent-ils ?",
+      "sql": "SELECT s.site_id, s.name AS site_name, p.name AS project_name FROM public.sites s LEFT JOIN public.projects p ON p.project_id = s.project_id ORDER BY project_name, site_name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Quels gateways sont installés sur chaque site ?",
+      "sql": "SELECT s.name AS site_name, g.name AS gateway_name FROM public.sites s JOIN public.site_gateways sg ON sg.site_id = s.site_id JOIN public.gateways g ON g.gateway_id = sg.gateway_id ORDER BY site_name, gateway_name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Lister tous les gateways avec leur protocole de transfert et leur fournisseur.",
+      "sql": "SELECT gateway_id, name, transfer_protocol, provider FROM public.gateways ORDER BY name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Combien de configs actives existe-t-il par gateway ?",
+      "sql": "SELECT g.name AS gateway_name, COUNT(*) AS active_config_count FROM public.configs c JOIN public.gateways g ON g.gateway_id = c.gateway_id WHERE c.active IS TRUE GROUP BY g.name ORDER BY active_config_count DESC;"
+    },
+    {
+      "role": "operateur",
+      "question": "Quelle est la taille estimée de la table raw_measurements (en GB) et son nombre de lignes ?",
+      "sql": "SELECT ROUND(pg_total_relation_size('public.raw_measurements')/1024.0/1024.0/1024.0,3) AS size_gb, COALESCE(n_live_tup,0) AS estimated_rows FROM pg_stat_all_tables WHERE schemaname='public' AND relname='raw_measurements';"
+    },
+    {
+      "role": "operateur",
+      "question": "Combien de capteurs distincts (sensor_id) ai-je sur les sites MAT et MAT_TOPO?",
+      "sql": "SELECT s.name AS site_name, COUNT(DISTINCT rm.sensor_id) AS sensor_count FROM public.sites s JOIN public.site_gateways sg ON sg.site_id = s.site_id JOIN public.gateways g ON g.gateway_id = sg.gateway_id JOIN public.raw_measurements rm ON rm.gateway_name = g.name WHERE s.name IN ('MAT','MAT_TOPO') GROUP BY s.name ORDER BY s.name;"
+    },
+    {
+      "role": "operateur",
+      "question": "Sur le site Y, quels types de données sont mesurés (metric / unit) ?",
+      "sql": "SELECT DISTINCT rm.metric, rm.unit FROM public.sites s JOIN public.site_gateways sg ON sg.site_id = s.site_id JOIN public.gateways g ON g.gateway_id = sg.gateway_id JOIN public.raw_measurements rm ON rm.gateway_name = g.name WHERE s.name = 'Y' ORDER BY rm.metric, rm.unit;"
+    },
+    {
+      "role": "operateur",
+      "question": "Sur le site Y, ai-je des données avant 2021 pour le capteur Z ?",
+      "sql": "SELECT MIN(timestamp::timestamptz) AS first_measure, MAX(timestamp::timestamptz) AS last_measure, COUNT(*) FILTER (WHERE timestamp::timestamptz < TIMESTAMPTZ '2021-01-01') AS rows_before_2021 FROM public.raw_measurements rm JOIN public.gateways g ON g.name = rm.gateway_name JOIN public.site_gateways sg ON sg.gateway_id = g.gateway_id JOIN public.sites s ON s.site_id = sg.site_id WHERE s.name = 'Y' AND rm.sensor_id = Z;"
+    }
+  ]
+}
