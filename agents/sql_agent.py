@@ -157,14 +157,75 @@ def create_sql_agent(llm):
         }
 
     def controller_node(state: SQLState) -> SQLState:
-        response = llm.invoke(state["messages"])
-        raw_structured = response.model_dump() if hasattr(response, "model_dump") else response
+        messages_to_send = list(state["messages"])
+        
+        # Anti-Loop Logic: Check if the last decision was a 'plan'
+        # We look at the last message in history. 
+        # If it is an AgentMessage from SQL Controller with output_type='plan', force execution.
+        last_message = messages_to_send[-1] if messages_to_send else None
+        if isinstance(last_message, AgentMessage):
+             structured = last_message.structured_output
+             if structured.get("output_type") == "plan":
+                 print("[SQL Controller] Anti-loop: Plan detected. Injecting execution mandate.")
+                 messages_to_send.append(
+                     HumanMessage(
+                         content=(
+                             "CRITICAL INSTRUCTION: You have already created a plan. "
+                             "DO NOT PLAN AGAIN. "
+                             "You MUST now EXECUTE the first step of your plan (e.g. call 'execute_sql')."
+                         )
+                     )
+                 )
+
+        response = llm.invoke(messages_to_send)
+        print(f"DEBUG: controller_node response type: {type(response)}")
+        
+        # Parse the raw AIMessage content using robust JSON decoding
+        content = str(getattr(response, "content", str(response)))
+        print(f"DEBUG: Raw Content: {content[:200]}...") # Log start of content
+        
+        raw_structured = {}
+        try:
+            # Find the first open brace
+            start_index = content.find("{")
+            if start_index != -1:
+                decoder = json.JSONDecoder()
+                # raw_decode parses the JSON starting at start_index and returns (obj, end_index)
+                # This ignores any "Extra data" after the JSON object.
+                raw_structured, end_index = decoder.raw_decode(content, start_index)
+                print(f"DEBUG: Successfully parsed JSON. Ignored trailing content starting at index {end_index}.")
+            else:
+                # Force a thought if no JSON found
+                raw_structured = {
+                    "output_type": "thought",
+                    "output_content": content.strip()
+                }
+        except Exception as e:
+            print(f"DEBUG: JSON Parsing Exception: {e}")
+            raw_structured = {
+                "output_type": "thought",
+                "output_content": f"JSON Parsing Error: {e}. Raw content: {content[:100]}..."
+            }
+            
         structured = raw_structured if isinstance(raw_structured, dict) else {}
-        output_type = structured.get("output_type", "")
-        output_content = structured.get("output_content", "")
+        
+        # Sanitize structured output to ensure JSON serializability
+        # This prevents errors if raw_structured contains complex objects like AIMessage
+        safe_keys = ["output_type", "output_content", "sql_query", "reference_key", "description"]
+        safe_structured = {}
+        for key in safe_keys:
+            if key in structured:
+                val = structured[key]
+                # Convert non-primitives to string (except None)
+                if val is not None and not isinstance(val, (str, int, float, bool)):
+                    val = str(val)
+                safe_structured[key] = val
+        
+        output_type = safe_structured.get("output_type", "")
+        output_content = safe_structured.get("output_content", "")
         agent_msg = AgentMessage(
             name="SQL Controller",
-            structured_output=structured,
+            structured_output=safe_structured,
         )
         print(f"[SQL Controller] {output_type}: {output_content}")
         return {"messages": [agent_msg]}

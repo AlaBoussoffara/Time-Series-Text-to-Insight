@@ -346,6 +346,8 @@ def create_visualization_agent(llm):
                 ("human", "\n\n".join(human_parts)),
             ]
         )
+        if response is None:
+            raise ValueError("Visualization LLM returned None")
         return response if isinstance(response, VisualizationCodeOutput) else VisualizationCodeOutput(**response)
 
     def load_context_node(state: VisualizationState) -> VisualizationState:

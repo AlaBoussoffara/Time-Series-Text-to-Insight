@@ -174,6 +174,8 @@ def create_analysis_agent(
         datastore_summary = state.get("datastore_summary", DEFAULT_DATASTORE_MESSAGE)
         try:
             response = _invoke_analysis_llm(llm, instruction, datastore_summary)
+            if response is None:
+                raise ValueError("Analysis LLM returned None")
         except Exception as exc:  # pragma: no cover - defensive
             print(f"--- ?? Failed to generate analysis: {exc} ---")
             state["error_message"] = f"Failed to generate analysis: {exc}"

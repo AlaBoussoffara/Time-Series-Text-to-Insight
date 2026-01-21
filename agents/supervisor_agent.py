@@ -37,7 +37,7 @@ def build_supervisor_graph() -> StateGraph:
         llm_from(
             agent_name="SQL Agent",
         )
-    ).with_structured_output(SQLAgentOutput)
+    )
     analysis_llm = llm_from(
         agent_name="Analysis Agent",
     ).with_structured_output(AnalysisAgentOutput)
@@ -53,7 +53,34 @@ def build_supervisor_graph() -> StateGraph:
     analysis_agent = create_analysis_agent(analysis_llm)
 
     def supervisor_node(state: GlobalState) -> GlobalState:
-        answer = supervisor_llm.invoke(state["global_messages_history"])
+        # Clone history to avoid mutating state directly
+        messages_to_send = list(state["global_messages_history"])
+        
+        # Anti-Loop Logic: Check if the last decision was a 'plan'
+        last_message = messages_to_send[-1] if messages_to_send else None
+        if isinstance(last_message, AgentMessage) and last_message.name == "Supervisor":
+             # We can inspect the structured output
+             structured = last_message.structured_output
+             if structured.get("output_type") == "plan":
+                 print("[Supervisor] Anti-loop: Plan detected. Injecting execution mandate.")
+                 messages_to_send.append(
+                     start_human_message := HumanMessage(
+                         content=(
+                             "CRITICAL INSTRUCTION: You have just created a plan (see history above). "
+                             "DO NOT CREATE ANOTHER PLAN. "
+                             "You MUST now EXECUTE the first step of your plan. "
+                             "Output the name of the agent to call (e.g., 'SQL Agent') or 'supervisor_final_answer'."
+                         )
+                     )
+                 )
+
+        answer = supervisor_llm.invoke(messages_to_send)
+        if answer is None:
+            raise ValueError(
+                "Supervisor LLM returned None. This usually occurs when the model fails to generate "
+                "structured output. Please check your model name in .env (e.g. Ensure it matches "
+                "a supported Bedrock/Mistral/Ollama model) and try again."
+            )
         structured = answer.model_dump()
         agent_msg = AgentMessage(
             name="Supervisor",
@@ -87,6 +114,8 @@ def build_supervisor_graph() -> StateGraph:
             }
         )
         sql_final_answer = response.get("sql_agent_final_answer", "SQL agent completed the task.")
+        if isinstance(sql_final_answer, BaseMessage):
+            sql_final_answer = str(sql_final_answer.content)
         datastore = response.get("datastore", datastore)
         datastore_snapshot = datastore.snapshot() if isinstance(datastore, DataStore) else {}
         trimmed_history: list[BaseMessage] = list(sql_agent_messages_history)

@@ -12,7 +12,7 @@ class BenchmarkJudge:
         if provider or model:
             resolved_provider = provider or os.getenv("USE_PROVIDER", "aws")
             resolved_model = model or os.getenv(
-                "USE_MODEL", "anthropic.claude-3-5-sonnet-20241022-v2:0"
+                "USE_MODEL_JUDGE", "anthropic.claude-3-5-sonnet-20241022-v2:0"
             )
             self.llm = llm_from(resolved_provider, resolved_model).with_structured_output(JudgeResult)
         else:

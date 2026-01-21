@@ -10,7 +10,7 @@ from agents.supervisor_agent import build_supervisor_graph
 from utils.datastore import DATASTORE
 from utils.messages import AgentMessage
 from utils.general_helpers import stream_graph
-from utils.llm_judge import BenchmarkJudge
+from utils.llm_judge import BenchmarkJudge, JudgeResult
 
 def _load_queries(path: Path, limit: Optional[int], start: int) -> List[Dict[str, str]]:
     """Return a slice of benchmark queries from a JSON file."""
@@ -132,12 +132,12 @@ def main():
         
         # --- Judging ---
         print("   Judging Spider Results...")
-        spider_sql_judge = judge.judge_sql(question, benchmark_sql, spider_res["sql"])
-        spider_ans_judge = judge.judge_answer(question, benchmark_sql, spider_res["answer"])
+        spider_sql_judge = judge.judge_sql(question, benchmark_sql, spider_res["sql"]) or JudgeResult(score=0, reasoning="Judge error/timeout")
+        spider_ans_judge = judge.judge_answer(question, benchmark_sql, spider_res["answer"]) or JudgeResult(score=0, reasoning="Judge error/timeout")
         
         print("   Judging Custom Results...")
-        custom_sql_judge = judge.judge_sql(question, benchmark_sql, custom_res["sql"])
-        custom_ans_judge = judge.judge_answer(question, benchmark_sql, custom_res["answer"])
+        custom_sql_judge = judge.judge_sql(question, benchmark_sql, custom_res["sql"]) or JudgeResult(score=0, reasoning="Judge error/timeout")
+        custom_ans_judge = judge.judge_answer(question, benchmark_sql, custom_res["answer"]) or JudgeResult(score=0, reasoning="Judge error/timeout")
         
         # Collect Data
         row = {

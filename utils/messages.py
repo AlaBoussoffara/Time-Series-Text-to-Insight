@@ -20,7 +20,9 @@ class AgentMessage(AIMessage):
     ):
         structured_output = structured_output or {}
         init_kwargs = dict(kwargs)
-        content = init_kwargs.pop("content", str(structured_output))
+        import json
+        # Use json.dumps to ensure the model sees a clear string representation of the dict
+        content = init_kwargs.pop("content", json.dumps(structured_output, indent=2))
         additional_kwargs = dict(init_kwargs.pop("additional_kwargs", {}))
         additional_kwargs["structured_output"] = structured_output
         if additional_kwargs:
