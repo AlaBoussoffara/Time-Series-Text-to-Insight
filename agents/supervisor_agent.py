@@ -109,10 +109,14 @@ def build_supervisor_graph() -> StateGraph:
         executed_sqls = []
         if isinstance(query_log, list):
             for entry in query_log:
-                if isinstance(entry, dict) and entry.get("entry_type") == "sql_result":
-                    sql = entry.get("sql_query")
-                    if sql:
-                        executed_sqls.append(sql)
+                if not isinstance(entry, dict):
+                    continue
+                entry_type = entry.get("entry_type")
+                if entry_type not in {"sql_result", "persistence_summary"}:
+                    continue
+                sql = entry.get("sql_query")
+                if sql:
+                    executed_sqls.append(sql)
 
         sql_structured_output = {
             "output_type": "SQL Agent",

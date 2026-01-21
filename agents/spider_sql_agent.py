@@ -109,13 +109,15 @@ class MockSpiderEnv:
                 print(f"[Spider Agent] execute_sql: {sql_query}")
             else:
                 print("[Spider Agent] execute_sql: EMPTY QUERY")
-            
+
             result_rows = None
             error_message = None
+            saved_ref = None
+            persisted = False
             try:
                 # Delegate to your EXISTING sql_utils
                 result_rows = execute_sql_tool(self.conn, sql_query)
-                
+
                 # Handle persistence if requested
                 if getattr(action, 'is_save', False):
                     try:
@@ -123,11 +125,12 @@ class MockSpiderEnv:
                         # Use save_path as reference key if provided, otherwise let datastore generate one
                         ref_key = action.save_path if action.save_path else None
                         saved_ref = self.datastore.put(
-                            df, 
+                            df,
                             description=f"Result of query: {sql_query}",
                             ref=ref_key,
                             upsert=True
                         )
+                        persisted = True
                         observation = f"Success. Rows returned: {len(result_rows)}. Data saved to datastore with ref: {saved_ref}"
                     except Exception as e:
                         observation = f"Success. Rows returned: {len(result_rows)}. Warning: Failed to save to datastore: {str(e)}"
@@ -166,6 +169,27 @@ class MockSpiderEnv:
                         }
                     )
                 self.query_log.append(log_entry)
+
+                if persisted:
+                    row_count = len(result_rows) if isinstance(result_rows, list) else 0
+                    summary_entry: Dict[str, Any] = {
+                        "entry_type": "persistence_summary",
+                        "reference_key": saved_ref or "",
+                        "description": f"Result of query: {sql_query}",
+                        "row_count": row_count,
+                        "datastore_ref": saved_ref,
+                        "persisted": True,
+                        "sql_query": sql_query,
+                        "note": f"Persisted {row_count} row(s) to `{saved_ref}`." if saved_ref else "",
+                    }
+                    if (
+                        self.query_log
+                        and isinstance(self.query_log[-1], dict)
+                        and self.query_log[-1].get("entry_type") == "sql_result"
+                        and self.query_log[-1].get("sql_query") == sql_query
+                    ):
+                        self.query_log.pop()
+                    self.query_log.append(summary_entry)
 
         # 3. Intercept Bash Actions
         elif type(action).__name__ == 'Bash':

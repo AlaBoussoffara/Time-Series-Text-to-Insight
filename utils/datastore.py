@@ -76,6 +76,10 @@ class DataStore:
         with self._lock:
             self._store.pop(ref, None)
 
+    def clear(self) -> None:
+        with self._lock:
+            self._store.clear()
+
     def exists(self, ref: str) -> bool:
         with self._lock:
             return ref in self._store

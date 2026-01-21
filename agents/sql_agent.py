@@ -426,6 +426,7 @@ def create_sql_agent(llm):
                 "row_count": row_count,
                 "datastore_ref": datastore_ref,
                 "persisted": True,
+                "sql_query": last_entry.get("sql_query"),
                 "note": (
                     f"Persisted {row_count} row(s) to `{reference_key}`."
                     if reference_key

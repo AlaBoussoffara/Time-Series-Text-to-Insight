@@ -47,3 +47,188 @@
 2026-01-19T14:12:33 request=9414bcea8b62441796b0e8e394d121ab API calls for request 1: Spider Agent=15 | Supervisor=6 | total=21
 2026-01-19T14:26:50 request=ffff51e396c94839a78455ae4ab8c79c API calls for request 1: Spider Agent=15 | Supervisor=6 | total=21
 2026-01-19T14:35:00 request=8a2b0f120c85409b90e896fd86d72252 API calls for request 1: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-19T16:43:59 request=d07acf23e309444fb8e110e7335cb454 API calls for request 1: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-19T20:30:31 request=ef6db56cb35343dda6e22e96e27c9db6 API calls for request 1: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T20:31:39 request=ce96e6daae8d4d6e90cd04884b428a91 API calls for request 2: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-19T20:32:48 request=5bc250da616042ffb2aa8e68916f853c API calls for request 3: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T20:34:13 request=d9c20a50038b4a5b96213c751ca421e1 API calls for request 4: SQL Agent=14 | Supervisor=6 | total=20
+2026-01-19T20:35:16 request=186dbd1ed51c40e19836dee2eb4c6bfb API calls for request 5: SQL Agent=11 | Supervisor=5 | total=16
+2026-01-19T20:37:08 request=d91da86899a44672972dfa26a6d24aac API calls for request 6: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-19T20:38:16 request=519911602ce1494c9d983364b474ce0e API calls for request 7: SQL Agent=8 | Supervisor=5 | total=13
+2026-01-19T20:39:33 request=015551575ce94c6eb484a344fcf0bcaf API calls for request 8: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T20:40:46 request=d346a7d56a2c4d02b5bbde68e2e27cd6 API calls for request 9: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-19T20:42:04 request=0e0ed0deb0864490b218ad3cc7a03dda API calls for request 10: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-19T20:43:15 request=a0316f6b49fb4f849acc3fd2bc38702e API calls for request 11: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T20:44:23 request=b69031ffffbe4fa6b689fb728bd7cde9 API calls for request 12: SQL Agent=9 | Supervisor=6 | total=15
+2026-01-19T20:45:34 request=9cdcfc17cd6d48e29ca9c2054e830082 API calls for request 13: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T20:46:43 request=404da9b3996441899d89256ee1d69c88 API calls for request 14: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T20:48:02 request=aedb7b4d108944898c3007c62a4669c7 API calls for request 15: SQL Agent=14 | Supervisor=6 | total=20
+2026-01-19T20:49:15 request=727522a416254e989dc6d4481fabdc7c API calls for request 16: SQL Agent=16 | Supervisor=3 | total=19
+2026-01-19T20:50:27 request=88b95734edc74a728d7f5a8b541fe05a API calls for request 17: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-19T20:51:55 request=03f349a78af0425eb9349d569753c099 API calls for request 18: SQL Agent=10 | Supervisor=6 | total=16
+2026-01-19T20:52:54 request=73ef6543e7b042109088f9a8dfc74f8c API calls for request 19: SQL Agent=8 | Supervisor=5 | total=13
+2026-01-19T20:54:14 request=b9670c388c144e9c8fb0de63f8f56eb4 API calls for request 20: SQL Agent=13 | Supervisor=5 | total=18
+2026-01-19T20:55:26 request=b466b55af5c243aeb44cae3269b0ad14 API calls for request 21: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T20:56:35 request=de5179c2749d45e9b029cc31a40baae3 API calls for request 22: SQL Agent=10 | Supervisor=6 | total=16
+2026-01-19T20:57:45 request=b320ca73f92a4b87bb1b5621e7ecbcef API calls for request 23: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-19T20:59:07 request=8129813780fc444680af45c5f631586e API calls for request 24: SQL Agent=13 | Supervisor=5 | total=18
+2026-01-19T21:00:19 request=d3b0474e52244167961d50f0cc696a2d API calls for request 25: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T21:01:34 request=faf4671e38834683925afb34f074e6f6 API calls for request 26: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T21:02:42 request=340b79f836de4a6aa19bf7f4c0c89bb2 API calls for request 27: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T21:04:07 request=375315ab0a5c434289db43b09244868c API calls for request 28: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T21:05:24 request=61ffcb87c73c41308615c3a0a8d51675 API calls for request 29: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T21:05:37 request=acfa9ad586724762823f66faa8716ae0 API calls for request 30: Supervisor=3 | total=3
+2026-01-19T21:05:47 request=bc2fbb6c2bc04f90b141c81cbd8275d1 API calls for request 31: Supervisor=3 | total=3
+2026-01-19T21:06:42 request=bef32d2392b74c96a0935fd299d12959 API calls for request 32: SQL Agent=10 | Supervisor=6 | total=16
+2026-01-19T21:07:38 request=ddf69782ead84444a9ad7a3dfeecaecf API calls for request 33: SQL Agent=8 | Supervisor=6 | total=14
+2026-01-19T21:08:44 request=176606acca6148919fc9ce7837977fbd API calls for request 34: SQL Agent=9 | Supervisor=6 | total=15
+2026-01-19T21:09:55 request=c7728fe07d1541a59e63712d69a62a80 API calls for request 35: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T21:11:01 request=d10ac9bd2a7b49f78664cbb76241905a API calls for request 36: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T21:12:05 request=901b0862cddf47e7849aac0f8230667a API calls for request 37: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-19T21:13:17 request=f30dbe4699914d99a971d4854cd06475 API calls for request 38: SQL Agent=13 | Supervisor=5 | total=18
+2026-01-19T21:14:14 request=6e23f17683fe4d329fa6a3a57ce0c086 API calls for request 39: SQL Agent=9 | Supervisor=5 | total=14
+2026-01-19T21:14:25 request=42cacb9b804f44738e4e7bb4ddc9a882 API calls for request 40: Supervisor=3 | total=3
+2026-01-19T21:36:14 request=ce540ea2b0b84f7d8d6b8fe71c984d01 API calls for request 1: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-19T21:44:53 request=859a61bf294a4c4789f2a33391613245 API calls for request 1: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-19T21:45:06 request=647a35dccf4240918d6aa0d012073ce0 API calls for request 2: Supervisor=3 | total=3
+2026-01-19T21:46:14 request=08e14316721c44f297fa74dc945d8b56 API calls for request 3: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T21:47:28 request=7536eb64cc54477abbf913e7e359f0f6 API calls for request 4: SQL Agent=14 | Supervisor=5 | total=19
+2026-01-19T21:49:06 request=ada8f5038045427b8d48c492814ab48c API calls for request 5: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-19T21:50:38 request=3075752cd6764509b0eab4840782b03a API calls for request 6: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T21:51:47 request=7d268bec6977470397dc82e68474840a API calls for request 7: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T21:52:51 request=a44ff626feb548108c7511eb41fb6d1e API calls for request 8: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T21:53:53 request=f9acdc2efe394a67ae77b9262b707f2c API calls for request 9: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T21:55:27 request=f42605c084e54551bca7451f8bd2ed25 API calls for request 10: SQL Agent=15 | Supervisor=6 | total=21
+2026-01-19T21:56:42 request=93c7fd6e9fec4c5eb29c75fecde4d5cf API calls for request 11: SQL Agent=13 | Supervisor=5 | total=18
+2026-01-19T21:57:37 request=f2025aabede24c529c4b2b2977b8e4b4 API calls for request 12: SQL Agent=8 | Supervisor=5 | total=13
+2026-01-19T21:58:42 request=d837d140c3ad4d15863af4ce1740bb66 API calls for request 13: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-19T21:59:46 request=196ac6b26ceb4da9a5ef055f41aaf010 API calls for request 14: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T22:00:57 request=04ac9f89bb2447d38fb5e8a374d3b3ad API calls for request 15: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-19T22:01:46 request=17fd0ed3cc0441d1b6a52783f58356ee API calls for request 16: SQL Agent=10 | Supervisor=3 | total=13
+2026-01-19T22:12:31 request=4246bf336d5a44adacbff3366975ce45 API calls for request 1: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T22:13:32 request=95d1295c274c477a9cb6f53759e04884 API calls for request 2: SQL Agent=11 | Supervisor=4 | total=15
+2026-01-19T22:14:44 request=b43b282fe0604a97a33432baa31f17ad API calls for request 3: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-19T22:16:14 request=1eea642c51994445a98fab249f042ac1 API calls for request 4: SQL Agent=14 | Supervisor=6 | total=20
+2026-01-19T22:17:07 request=2931535e60a24b738d104c3f8380fee9 API calls for request 5: SQL Agent=9 | Supervisor=5 | total=14
+2026-01-19T22:18:12 request=d66a8be77cf44951b1b1240c6c1a3c29 API calls for request 6: SQL Agent=10 | Supervisor=6 | total=16
+2026-01-19T22:19:24 request=0f25e15446564b7aa798d37e74ce5d39 API calls for request 1: SQL Agent=9 | Supervisor=6 | total=15
+2026-01-19T22:19:33 request=f435650d9e2b45be840ea5e0fbcb70c1 API calls for request 2: Supervisor=3 | total=3
+2026-01-19T22:20:34 request=ece0b1f4e2be447f9d3e02344c35f814 API calls for request 3: SQL Agent=10 | Supervisor=5 | total=15
+2026-01-19T22:21:42 request=bf47da5bcc484085ae8217de7cda108f API calls for request 4: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-19T22:23:22 request=c7cfe6b96b5f45fba283f085d7f1f3c0 API calls for request 5: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T22:24:19 request=d0f026afbc48454ab0d112b365986f45 API calls for request 6: SQL Agent=9 | Supervisor=6 | total=15
+2026-01-19T22:25:12 request=1fe3109fae22413c901a47ffec84f916 API calls for request 7: SQL Agent=9 | Supervisor=6 | total=15
+2026-01-19T22:26:18 request=f4c7e5fc294147e799c1e69d0df05ee1 API calls for request 8: SQL Agent=10 | Supervisor=6 | total=16
+2026-01-19T22:27:19 request=a0d28d66b0d24cb995c5edd1034dccc0 API calls for request 9: SQL Agent=11 | Supervisor=5 | total=16
+2026-01-19T22:28:47 request=3fe57e8a1e414cddb8114a4091af9211 API calls for request 10: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T22:29:55 request=e86784ee61a345cc986c237beef11f77 API calls for request 11: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T22:30:57 request=cf7254038dec45e68ddc10cd9aedef5b API calls for request 12: SQL Agent=9 | Supervisor=5 | total=14
+2026-01-19T22:32:06 request=150b6e24888c48eaafa990fe300bc97e API calls for request 13: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T22:33:03 request=423b670a467442a6a72fd15c2412bf63 API calls for request 14: SQL Agent=10 | Supervisor=5 | total=15
+2026-01-19T22:33:57 request=b15fea2acfee4616af1a2aed3527d069 API calls for request 15: SQL Agent=8 | Supervisor=6 | total=14
+2026-01-19T22:35:48 request=5f9c853dea364f26865a4e1aa072c9e4 API calls for request 16: SQL Agent=15 | Supervisor=6 | total=21
+2026-01-19T22:37:35 request=e59e9570eedd4a9f8ca1ebea024758da API calls for request 17: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-19T22:38:57 request=deff6a8c9d40446d915c19f875782ace API calls for request 18: SQL Agent=10 | Supervisor=5 | total=15
+2026-01-19T22:39:56 request=ef209fa17da94f998a9af9c7f59f22f6 API calls for request 19: SQL Agent=10 | Supervisor=6 | total=16
+2026-01-19T22:40:54 request=a913f21bb7874fce947887fea7b40620 API calls for request 20: SQL Agent=9 | Supervisor=5 | total=14
+2026-01-19T22:42:01 request=6c69455fba69485b8d2ede9ec08b2bc6 API calls for request 21: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T22:43:20 request=798bfed180a84667a0b16cc89b7dd93a API calls for request 22: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-19T22:44:23 request=66c4e6e5cdb5493784b4f7db6931f358 API calls for request 23: SQL Agent=10 | Supervisor=5 | total=15
+2026-01-19T22:45:26 request=6928b32096e5481e8f28e42d834100b8 API calls for request 24: SQL Agent=8 | Supervisor=5 | total=13
+2026-01-19T22:46:37 request=0a8d65c48dda490cbe41a87f666c887c API calls for request 25: SQL Agent=11 | Supervisor=6 | total=17
+2026-01-19T22:47:46 request=86068135428a4ff98a06bcd922e2d44d API calls for request 26: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T22:48:48 request=fa33e047732c4c5db98f5249527b082c API calls for request 27: SQL Agent=8 | Supervisor=5 | total=13
+2026-01-19T22:50:11 request=fa0b8c7f54cc4fe7ae5cd4c509b2b2e3 API calls for request 28: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-19T22:51:04 request=ff80bd911b11415d85a879026cbc457b API calls for request 29: SQL Agent=8 | Supervisor=6 | total=14
+2026-01-19T22:51:16 request=74c3fd348704424b8dc1e20f4ae624d5 API calls for request 30: Supervisor=3 | total=3
+2026-01-19T22:51:29 request=94c4af6f07a948a4a36443e937a9e322 API calls for request 31: Supervisor=3 | total=3
+2026-01-19T22:52:16 request=071ac89c041d4acd9eb13b363ccb6f9d API calls for request 32: SQL Agent=8 | Supervisor=5 | total=13
+2026-01-19T22:53:06 request=62fd286eb7994c01a1615f96b89a8a23 API calls for request 33: SQL Agent=9 | Supervisor=4 | total=13
+2026-01-19T22:54:11 request=ff48a2ac2b69463fae8e2afd6e098ba2 API calls for request 34: SQL Agent=10 | Supervisor=6 | total=16
+2026-01-19T22:55:22 request=72984f686d2a42689b91e11100fcd848 API calls for request 35: SQL Agent=11 | Supervisor=5 | total=16
+2026-01-19T22:56:30 request=e18b712bbfca4930b17cafc41d8aa714 API calls for request 36: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T22:57:19 request=ee633aa4b9404e4992270deeb32c7368 API calls for request 37: SQL Agent=8 | Supervisor=5 | total=13
+2026-01-19T22:58:23 request=5b514f316ce24ab88ac0cd9a3b1e6c67 API calls for request 38: SQL Agent=10 | Supervisor=6 | total=16
+2026-01-19T22:59:27 request=3a6db55908d74daaa5b71ac22a21fe80 API calls for request 39: SQL Agent=13 | Supervisor=4 | total=17
+2026-01-19T22:59:38 request=197427533b964dd89620d7afa28df049 API calls for request 40: Supervisor=3 | total=3
+2026-01-19T23:33:20 request=783fb1f6038c4244bab7bc9bb33da883 API calls for request 1: SQL Agent=9 | Supervisor=6 | total=15
+2026-01-19T23:33:31 request=0e386a5380c041d3930407afd27a6082 API calls for request 2: Supervisor=3 | total=3
+2026-01-19T23:34:41 request=f188ec9c4f5a4bf38ebff50bd178ab5c API calls for request 3: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-19T23:36:04 request=66d4f0587e3d4fe6a2ca379318cb58f8 API calls for request 4: SQL Agent=14 | Supervisor=6 | total=20
+2026-01-19T23:37:46 request=560f151e86c54317aba4b35b005292e3 API calls for request 5: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-19T23:38:40 request=d0b8dace29434530aade2ba775cffccc API calls for request 6: SQL Agent=8 | Supervisor=6 | total=14
+2026-01-19T23:39:37 request=5804193abd004b3180acfc6f9a06d303 API calls for request 7: SQL Agent=8 | Supervisor=6 | total=14
+2026-01-19T23:40:44 request=e0eccfa2701c43e89e774173dfe246bd API calls for request 8: SQL Agent=10 | Supervisor=5 | total=15
+2026-01-19T23:40:50 request=545f47dd0b8d488f987574f2d2c7f778 API calls for request 9: Supervisor=2 | total=2
+2026-01-20T09:48:48 request=dd9bdd8c7c3b4b77bc276d21135f7834 API calls for request 10: SQL Agent=14 | Supervisor=6 | total=20
+2026-01-20T09:50:03 request=f18e84c1a72f4b0398ed85444da47655 API calls for request 11: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-20T09:51:23 request=df9b1aa520a64bd084d848169605d83d API calls for request 12: SQL Agent=16 | Supervisor=3 | total=19
+2026-01-20T09:52:35 request=a5f2a994f60b48b5a635b6c78bd04f16 API calls for request 13: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-20T09:53:41 request=e788559a5589480a806eb9657ff4e2af API calls for request 14: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-20T09:54:46 request=5ce2bbddb2c74646af0028af95275ffd API calls for request 15: SQL Agent=10 | Supervisor=6 | total=16
+2026-01-20T09:56:14 request=41d603c0bc634f6d9a58a6dec80a9156 API calls for request 16: SQL Agent=16 | Supervisor=3 | total=19
+2026-01-20T09:58:14 request=f3400df280c8498280799c8ae1bc9e83 API calls for request 17: SQL Agent=15 | Supervisor=3 | total=18
+2026-01-20T10:00:57 request=d57d07b06066479fa901b0ad5354cee5 API calls for request 18: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-20T10:01:54 request=d9de365668594187b088bc673693d435 API calls for request 19: SQL Agent=9 | Supervisor=6 | total=15
+2026-01-20T10:03:28 request=40dfaa7e7153451681a314b43b7ca221 API calls for request 20: SQL Agent=12 | Supervisor=5 | total=17
+2026-01-20T10:04:42 request=1fcd31ea2a364054a136e3dccd6e8ab3 API calls for request 21: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-20T10:05:35 request=431844455273424fb93a632020b3d9eb API calls for request 22: SQL Agent=8 | Supervisor=5 | total=13
+2026-01-20T10:06:30 request=017f61c0434440daa100ccb62080ec9f API calls for request 23: SQL Agent=8 | Supervisor=5 | total=13
+2026-01-20T10:07:39 request=df25f5cfa63b4f3f86bce199a2342173 API calls for request 24: SQL Agent=9 | Supervisor=6 | total=15
+2026-01-20T10:08:36 request=5bde2688ba744fa79aebeaeba6dfafe4 API calls for request 25: SQL Agent=9 | Supervisor=5 | total=14
+2026-01-20T10:09:50 request=2d6235de2419447199f0df9f905aec89 API calls for request 26: SQL Agent=13 | Supervisor=5 | total=18
+2026-01-20T10:10:46 request=c46237a7b4004bdb92259d6a8abcbab3 API calls for request 27: SQL Agent=8 | Supervisor=6 | total=14
+2026-01-20T10:13:28 request=69d6b220be534772abecfa0ebf7e2351 API calls for request 28: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-20T10:14:34 request=a54e3587a9d0448e9da7131dc9504e54 API calls for request 29: SQL Agent=9 | Supervisor=6 | total=15
+2026-01-20T10:14:46 request=78af066ece524ddfba1ec0d8c33de25b API calls for request 30: Supervisor=3 | total=3
+2026-01-20T10:16:20 request=dfcffed3d3db49cca464c3bd0bb9c694 API calls for request 31: SQL Agent=8 | Supervisor=6 | total=14
+2026-01-20T10:17:12 request=9a9f04da2b3e4016856d1d1aa5d65936 API calls for request 32: SQL Agent=9 | Supervisor=5 | total=14
+2026-01-20T10:18:12 request=41e1b34808764a249f86f78f1ddf1a97 API calls for request 33: SQL Agent=10 | Supervisor=5 | total=15
+2026-01-20T10:19:13 request=9d09da2e3aec4bce8077d23e90c3ae0f API calls for request 34: SQL Agent=9 | Supervisor=6 | total=15
+2026-01-20T10:20:07 request=1ef5056f3a004bfc9ec55e3411299312 API calls for request 35: SQL Agent=9 | Supervisor=5 | total=14
+2026-01-20T10:21:20 request=9e6d719e7f074210a654d85744bd5da7 API calls for request 36: SQL Agent=13 | Supervisor=6 | total=19
+2026-01-20T10:22:24 request=d6e2cd7952f240769219d2542d2c2104 API calls for request 37: SQL Agent=10 | Supervisor=6 | total=16
+2026-01-20T10:23:40 request=211783463c2346a58c2f9a9dc4c32151 API calls for request 38: SQL Agent=12 | Supervisor=6 | total=18
+2026-01-20T10:24:40 request=4b95775e103f449fa4660b9a104cf4e4 API calls for request 39: SQL Agent=9 | Supervisor=6 | total=15
+2026-01-20T10:24:50 request=d80ffbdf22164dd58f1a0624310455bb API calls for request 40: Supervisor=3 | total=3
+2026-01-20T10:41:59 request=5ee8e7c9e9d74e02b99ed8e6c5ad8e21 API calls for request 1: Supervisor=1 | total=1
+2026-01-20T11:11:03 request=05ac49b05c9c4df69ec174cfd8f4eb67 API calls for request 1: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:11:15 request=4ce2dfea875b4143940dfe2b394f7596 API calls for request 2: Supervisor=3 | total=3
+2026-01-20T11:12:34 request=27c7f32fb1324c10b118216b92d24efd API calls for request 3: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:13:53 request=5b0be9d53f4844e9998e2ca1cde12026 API calls for request 4: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:15:44 request=30363e3dd60c409dbbdfa626e71a7aba API calls for request 5: Analysis Agent=1 | Spider Agent=15 | Supervisor=7 | total=23
+2026-01-20T11:17:01 request=7a5aa1326e6041e5a05b184f2db79e72 API calls for request 6: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:18:20 request=d7c781129c3349b2bc977375b35d93f5 API calls for request 7: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:19:39 request=6fcd1de4dbac454f9a8e8ab31b39bd61 API calls for request 8: Spider Agent=13 | Supervisor=6 | total=19
+2026-01-20T11:20:57 request=b88ff380b1fb4e21a2eaf40bd77fb8fa API calls for request 9: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:24:21 request=a8a052587f724a8b967e5d458f1c93a0 API calls for request 10: Spider Agent=30 | Supervisor=8 | total=38
+2026-01-20T11:25:41 request=00d3671f5e4248c2a3c16559a075333e API calls for request 11: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:27:04 request=480440abd6504b56a8444902dbb2682a API calls for request 12: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:28:36 request=0a222bd1fa004e73ae157d5b51128a08 API calls for request 13: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:30:08 request=aa96e3987a834638818f74d63094437f API calls for request 14: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:31:34 request=57692eece2064822a058956b83644dde API calls for request 15: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:33:08 request=1846c3353bf4417c99270e6726278f4c API calls for request 16: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:34:48 request=6f873be9b3a14abaa069fa0d0fbd0d6b API calls for request 17: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:36:28 request=6f96e7831337435c83ff1114d5d77e19 API calls for request 18: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:37:44 request=881578380d6d40668873f1f4e64f755e API calls for request 19: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:39:12 request=6628b90ccc2a45008a7e48394b78e7eb API calls for request 20: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:40:30 request=76dec3e963234aaabb1aeaff76ffe2b8 API calls for request 21: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:42:00 request=5e833658b1a9458b802dcc87a88a6143 API calls for request 22: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:43:23 request=a255a7cec8eb48ea80f30b0b64c2f22b API calls for request 23: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:45:04 request=c1acd80f9d44410b86a8d4608fcda036 API calls for request 24: Analysis Agent=1 | Spider Agent=15 | Supervisor=8 | total=24
+2026-01-20T11:46:21 request=bcd46af11b054b09b83bd5f5e1dd6279 API calls for request 25: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:47:43 request=36b41bd1d9e14d188c55d04d0bcb9d9c API calls for request 26: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:49:05 request=971fe5e8ee88469abca5443d4fd8476c API calls for request 27: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:50:32 request=f339790dfd1f423d8f3e7801f69bb976 API calls for request 28: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:51:52 request=5b4fff44840548a78a32066ee3f98f18 API calls for request 29: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:52:01 request=6edf85701ca946558305ba8a9d326def API calls for request 30: Supervisor=3 | total=3
+2026-01-20T11:52:12 request=0762c273ec8b48578645986832a9c5e6 API calls for request 31: Supervisor=3 | total=3
+2026-01-20T11:53:30 request=619acffca0114b04883f40fd8a3e3a52 API calls for request 32: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:54:46 request=7481cb819bf1416985457ec1d22c9249 API calls for request 33: Spider Agent=15 | Supervisor=4 | total=19
+2026-01-20T11:56:04 request=b42be2959a2a4140b5c69edbca0cae75 API calls for request 34: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:57:19 request=19bda0229992461d8ba551e2b7b30bd5 API calls for request 35: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:58:40 request=1aa02045999a40ea89640342684c414b API calls for request 36: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T11:59:58 request=7ea37457668445cb8113173a8bfbbbd2 API calls for request 37: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T12:01:25 request=2173277273bd400186f355207c608d94 API calls for request 38: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T12:02:49 request=95d2cbaedd8041138a007725889f2f44 API calls for request 39: Spider Agent=15 | Supervisor=6 | total=21
+2026-01-20T12:03:00 request=0878185bae3d4e069e3704b69c5ccd61 API calls for request 40: Supervisor=3 | total=3

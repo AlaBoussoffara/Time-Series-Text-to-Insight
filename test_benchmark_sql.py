@@ -112,6 +112,7 @@ def main():
             'Question',
             'Benchmark SQL',
             'Generated SQL',
+            'Generated SQLs',
             'Supervisor Answer',
             'SQL Prompt Tokens',
             'SQL Completion Tokens',
@@ -133,10 +134,9 @@ def main():
             request_label = f"API calls for request {i+args.start+1}"
             reset_api_call_count()
             reset_token_usage()
+            DATASTORE.clear()
             
             try:
-                # Reset Datastore? usage in supervisor_agent uses global DATASTORE or passes it.
-                # `run_supervisor` creates a new state.
                 SUPERVISOR_PROMPT_TEXT = Path("prompts/supervisor_prompt.txt").read_text(encoding="utf-8")
                 messages = [SystemMessage(SUPERVISOR_PROMPT_TEXT), HumanMessage(question)]
                 
@@ -159,15 +159,21 @@ def main():
                 # Extract SQL
                 # Trying to find it in the history
                 generated_sql = "N/A"
+                generated_sqls: List[str] = []
                 for msg in history:
                      if isinstance(msg, AgentMessage) and msg.name == "SQL Agent":
                           # Look for a new field I put in, or just "N/A" for now
                           # I will update supervisor_agent.py next to include sql_queries in the output
                           queries = msg.structured_output.get("sql_queries", [])
-                          if queries:
-                               generated_sql = queries[-1]
+                          if isinstance(queries, list) and queries:
+                               generated_sqls.extend([str(q).strip() for q in queries if str(q).strip()])
                           elif "sql_query" in msg.structured_output:
-                               generated_sql = msg.structured_output["sql_query"]
+                               sql_query = str(msg.structured_output["sql_query"]).strip()
+                               if sql_query:
+                                    generated_sqls.append(sql_query)
+                
+                if generated_sqls:
+                     generated_sql = generated_sqls[-1]
                 
                 token_usage = get_token_usage()
                 if args.output_json:
@@ -177,6 +183,7 @@ def main():
                         "question": question,
                         "benchmark_sql": benchmark_sql,
                         "generated_sql": generated_sql,
+                        "generated_sql_all": generated_sqls,
                         "supervisor_answer": supervisor_answer,
                         "discussion": [_message_to_dict(msg) for msg in history],
                         "api_calls_for_request": {
@@ -194,6 +201,7 @@ def main():
                     'Question': question,
                     'Benchmark SQL': benchmark_sql,
                     'Generated SQL': generated_sql,
+                    'Generated SQLs': ";; ".join(generated_sqls),
                     'Supervisor Answer': supervisor_answer,
                     'SQL Prompt Tokens': token_usage.get('prompt_tokens', 0),
                     'SQL Completion Tokens': token_usage.get('completion_tokens', 0),
@@ -211,6 +219,7 @@ def main():
                         "question": question,
                         "benchmark_sql": benchmark_sql,
                         "generated_sql": "ERROR",
+                        "generated_sql_all": [],
                         "supervisor_answer": str(e),
                         "discussion": [_message_to_dict(msg) for msg in history] if "history" in locals() else [],
                         "api_calls_for_request": {
@@ -228,6 +237,7 @@ def main():
                     'Question': question,
                     'Benchmark SQL': benchmark_sql,
                     'Generated SQL': "ERROR",
+                    'Generated SQLs': "",
                     'Supervisor Answer': str(e),
                     'SQL Prompt Tokens': token_usage.get('prompt_tokens', 0),
                     'SQL Completion Tokens': token_usage.get('completion_tokens', 0),
