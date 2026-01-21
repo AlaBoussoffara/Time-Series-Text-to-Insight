@@ -26,6 +26,21 @@ from utils.output_basemodels import *
 from utils.datastore import DATASTORE, DataStore
 
 
+def _flatten_history(messages: Sequence[BaseMessage]) -> str:
+    lines: list[str] = []
+    for msg in messages:
+        role = getattr(msg, "type", msg.__class__.__name__)
+        name = getattr(msg, "name", None)
+        content = getattr(msg, "content", "")
+        if not isinstance(content, str):
+            content = str(content)
+        label = role
+        if name:
+            label = f"{role} name={name}"
+        lines.append(f"{label}: {content}")
+    return "\n".join(lines)
+
+
 def build_supervisor_graph() -> StateGraph:
     """Build and compile the Supervisor graph."""
     
@@ -53,7 +68,20 @@ def build_supervisor_graph() -> StateGraph:
     analysis_agent = create_analysis_agent(analysis_llm)
 
     def supervisor_node(state: GlobalState) -> GlobalState:
-        answer = supervisor_llm.invoke(state["global_messages_history"])
+        history = list(state.get("global_messages_history") or [])
+        system_content = ""
+        non_system: list[BaseMessage] = []
+        for msg in history:
+            if isinstance(msg, SystemMessage) and not system_content:
+                system_content = msg.content or ""
+                continue
+            non_system.append(msg)
+        flattened = _flatten_history(non_system)
+        prompt_messages: list[BaseMessage] = [
+            SystemMessage(system_content),
+            HumanMessage("Conversation history:\n" + flattened),
+        ]
+        answer = supervisor_llm.invoke(prompt_messages)
         structured = answer.model_dump()
         agent_msg = AgentMessage(
             name="Supervisor",
