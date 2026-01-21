@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 import os
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
@@ -24,6 +24,51 @@ from utils.token_counter import (
 )
 from utils.output_basemodels import *
 from utils.datastore import DATASTORE, DataStore
+
+
+_SUPERVISOR_OUTPUT_TYPES = {
+    "plan",
+    "thought",
+    "supervisor_final_answer",
+    "hallucination",
+    "no_hallucination",
+    "SQL Agent",
+    "Analysis Agent",
+    "Visualization Agent",
+}
+
+
+def _coerce_supervisor_output(answer: Any) -> tuple[dict[str, Any], bool]:
+    if answer is None:
+        return {
+            "output_type": "supervisor_final_answer",
+            "output_content": "Sorry, I couldn't generate a response. Please try again.",
+        }, True
+    if hasattr(answer, "model_dump"):
+        try:
+            structured = answer.model_dump()
+        except Exception:
+            structured = {}
+    elif isinstance(answer, dict):
+        structured = dict(answer)
+    else:
+        content = getattr(answer, "content", None)
+        structured = {
+            "output_type": "supervisor_final_answer",
+            "output_content": str(content or answer),
+        }
+    output_type = structured.get("output_type")
+    output_content = structured.get("output_content")
+    if output_type not in _SUPERVISOR_OUTPUT_TYPES:
+        if not output_content:
+            output_content = "Sorry, I couldn't generate a structured response. Please try again."
+        return {
+            "output_type": "supervisor_final_answer",
+            "output_content": str(output_content),
+        }, True
+    if output_content is None:
+        structured["output_content"] = ""
+    return structured, False
 
 
 def _flatten_history(messages: Sequence[BaseMessage]) -> str:
@@ -81,8 +126,24 @@ def build_supervisor_graph() -> StateGraph:
             SystemMessage(system_content),
             HumanMessage("Conversation history:\n" + flattened),
         ]
-        answer = supervisor_llm.invoke(prompt_messages)
-        structured = answer.model_dump()
+        try:
+            answer = supervisor_llm.invoke(prompt_messages)
+        except Exception:
+            answer = None
+        structured, fallback_used = _coerce_supervisor_output(answer)
+        if fallback_used:
+            fallback_message = AgentMessage(
+                name="Supervisor",
+                structured_output=structured,
+            )
+            audit_message = AgentMessage(
+                name="Supervisor",
+                structured_output={
+                    "output_type": "no_hallucination",
+                    "output_content": "Fallback response generated locally; no external data used.",
+                },
+            )
+            return {"global_messages_history": [fallback_message, audit_message]}
         agent_msg = AgentMessage(
             name="Supervisor",
             structured_output=structured,
