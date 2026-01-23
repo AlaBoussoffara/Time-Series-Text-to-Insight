@@ -52,6 +52,15 @@ class PromptAgent:
         self.max_memory_length = max_memory_length
         self.max_steps = max_steps
         
+        # Create wrapped LLM once for token tracking
+        self.spider_llm = wrap_llm_with_token_counter(
+            llm_from(
+                os.getenv("USE_PROVIDER"),
+                os.getenv("USE_MODEL"),
+                agent_name="Spider Agent",
+            )
+        )
+        
         self.thoughts = []
         self.responses = []
         self.actions = []
@@ -121,16 +130,9 @@ class PromptAgent:
                     }
                 ]
             })
-            spider_llm = wrap_llm_with_token_counter(
-                llm_from(
-                    os.getenv("USE_PROVIDER"),
-                    os.getenv("USE_MODEL"),
-                    agent_name="Spider Agent",
-                )
-            )
             
             try:
-                msg = spider_llm.invoke(messages)
+                msg = self.spider_llm.invoke(messages)
                 response = msg.content
                 status = True
             except Exception as e:

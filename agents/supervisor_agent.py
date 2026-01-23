@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 import os
+import json
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 
@@ -26,12 +27,74 @@ from utils.output_basemodels import *
 from utils.datastore import DATASTORE, DataStore
 
 
+_SUPERVISOR_OUTPUT_TYPES = {
+    "plan",
+    "thought",
+    "supervisor_final_answer",
+    "hallucination",
+    "no_hallucination",
+    "SQL Agent",
+    "Analysis Agent",
+    "Visualization Agent",
+}
+
+
+def _coerce_supervisor_output(answer: Any) -> tuple[dict[str, Any], bool]:
+    if answer is None:
+        return {
+            "output_type": "supervisor_final_answer",
+            "output_content": "Sorry, I couldn't generate a response. Please try again.",
+        }, True
+    if hasattr(answer, "model_dump"):
+        try:
+            structured = answer.model_dump()
+        except Exception:
+            structured = {}
+    elif isinstance(answer, dict):
+        structured = dict(answer)
+    else:
+        content = getattr(answer, "content", None)
+        structured = {
+            "output_type": "supervisor_final_answer",
+            "output_content": str(content or answer),
+        }
+    output_type = structured.get("output_type")
+    output_content = structured.get("output_content")
+    if output_type not in _SUPERVISOR_OUTPUT_TYPES:
+        if not output_content:
+            output_content = "Sorry, I couldn't generate a structured response. Please try again."
+        return {
+            "output_type": "supervisor_final_answer",
+            "output_content": str(output_content),
+        }, True
+    if output_content is None:
+        structured["output_content"] = ""
+    return structured, False
+
+
+def _flatten_history(messages: Sequence[BaseMessage]) -> str:
+    lines: list[str] = []
+    for msg in messages:
+        role = getattr(msg, "type", msg.__class__.__name__)
+        name = getattr(msg, "name", None)
+        content = getattr(msg, "content", "")
+        if not isinstance(content, str):
+            content = str(content)
+        label = role
+        if name:
+            label = f"{role} name={name}"
+        lines.append(f"{label}: {content}")
+    return "\n".join(lines)
+
+
 def build_supervisor_graph() -> StateGraph:
     """Build and compile the Supervisor graph."""
     
-    supervisor_llm = llm_from(
-        agent_name="Supervisor",
-    ).with_structured_output(SupervisorOutput)
+    supervisor_llm = wrap_llm_with_token_counter(
+        llm_from(
+            agent_name="Supervisor",
+        )
+    )
     
     sql_llm = wrap_llm_with_token_counter(
         llm_from(
@@ -53,38 +116,68 @@ def build_supervisor_graph() -> StateGraph:
     analysis_agent = create_analysis_agent(analysis_llm)
 
     def supervisor_node(state: GlobalState) -> GlobalState:
-        # Clone history to avoid mutating state directly
-        messages_to_send = list(state["global_messages_history"])
+        history = list(state.get("global_messages_history") or [])
+        system_content = ""
+        non_system: list[BaseMessage] = []
+        for msg in history:
+            if isinstance(msg, SystemMessage) and not system_content:
+                system_content = msg.content or ""
+                continue
+            non_system.append(msg)
+        flattened = _flatten_history(non_system)
+        prompt_messages: list[BaseMessage] = [
+            SystemMessage(system_content),
+            HumanMessage("Conversation history:\n" + flattened),
+        ]
         
         # Anti-Loop Logic: Check if the last decision was a 'plan'
-        last_message = messages_to_send[-1] if messages_to_send else None
+        last_message = history[-1] if history else None
         if isinstance(last_message, AgentMessage) and last_message.name == "Supervisor":
-             # We can inspect the structured output
              structured = last_message.structured_output
              if structured.get("output_type") == "plan":
                  print("[Supervisor] Anti-loop: Plan detected. Injecting execution mandate.")
-                 messages_to_send.append(
-                     start_human_message := HumanMessage(
+                 prompt_messages.append(
+                     HumanMessage(
                          content=(
-                             "CRITICAL INSTRUCTION: You have just created a plan (see history above). "
-                             "DO NOT CREATE ANOTHER PLAN. "
+                             "CRITICAL INSTRUCTION: You have just created a plan. "
+                             "DO NOT PLAN AGAIN. "
                              "You MUST now EXECUTE the first step of your plan. "
                              "Output the name of the agent to call (e.g., 'SQL Agent') or 'supervisor_final_answer'."
                          )
                      )
                  )
 
-        answer = supervisor_llm.invoke(messages_to_send)
-        if answer is None:
-            raise ValueError(
-                "Supervisor LLM returned None. This usually occurs when the model fails to generate "
-                "structured output. Please check your model name in .env (e.g. Ensure it matches "
-                "a supported Bedrock/Mistral/Ollama model) and try again."
-            )
-        structured = answer.model_dump()
+        response = supervisor_llm.invoke(prompt_messages)
+        
+        # Parse the raw AIMessage content using robust JSON decoding
+        content = str(getattr(response, "content", str(response)))
+        
+        raw_structured = {}
+        try:
+            start_index = content.find("{")
+            if start_index != -1:
+                decoder = json.JSONDecoder()
+                raw_structured, _ = decoder.raw_decode(content, start_index)
+            else:
+                raw_structured = {
+                    "output_type": "thought",
+                    "output_content": content.strip()
+                }
+        except Exception as e:
+            raw_structured = {
+                "output_type": "thought",
+                "output_content": f"JSON Parsing Error: {e}. Raw content: {content[:100]}..."
+            }
+            
+        # Ensure output_type is valid if possible
+        if "output_type" not in raw_structured and "output_content" not in raw_structured:
+             # Try to salvage if it's just a string returned
+             raw_structured["output_type"] = "thought"
+             raw_structured["output_content"] = content.strip()
+
         agent_msg = AgentMessage(
             name="Supervisor",
-            structured_output=structured,
+            structured_output=raw_structured,
         )
         return {"global_messages_history": [agent_msg]}
 
@@ -114,8 +207,6 @@ def build_supervisor_graph() -> StateGraph:
             }
         )
         sql_final_answer = response.get("sql_agent_final_answer", "SQL agent completed the task.")
-        if isinstance(sql_final_answer, BaseMessage):
-            sql_final_answer = str(sql_final_answer.content)
         datastore = response.get("datastore", datastore)
         datastore_snapshot = datastore.snapshot() if isinstance(datastore, DataStore) else {}
         trimmed_history: list[BaseMessage] = list(sql_agent_messages_history)
@@ -140,11 +231,27 @@ def build_supervisor_graph() -> StateGraph:
                     if sql:
                         executed_sqls.append(sql)
 
+        # Sanitize datastore_snapshot to ensure JSON serializability
+        safe_snapshot = {}
+        if isinstance(datastore_snapshot, dict):
+            for key, val in datastore_snapshot.items():
+                if isinstance(val, (str, int, float, bool, type(None))):
+                    safe_snapshot[key] = val
+                elif isinstance(val, (list, dict)):
+                    # For lists and dicts, convert to string if they might contain complex objects
+                    try:
+                        json.dumps(val)
+                        safe_snapshot[key] = val
+                    except (TypeError, ValueError):
+                        safe_snapshot[key] = str(val)
+                else:
+                    safe_snapshot[key] = str(val)
+        
         sql_structured_output = {
             "output_type": "SQL Agent",
-            "output_content": sql_final_answer,
-            "datastore_summary": datastore_snapshot,
-            "sql_queries": executed_sqls,
+            "output_content": str(sql_final_answer),
+            "datastore_summary": safe_snapshot,
+            "sql_queries": [str(q) for q in executed_sqls],
         }
         return {
             "datastore": datastore,

@@ -178,11 +178,9 @@ def create_sql_agent(llm):
                  )
 
         response = llm.invoke(messages_to_send)
-        print(f"DEBUG: controller_node response type: {type(response)}")
         
         # Parse the raw AIMessage content using robust JSON decoding
         content = str(getattr(response, "content", str(response)))
-        print(f"DEBUG: Raw Content: {content[:200]}...") # Log start of content
         
         raw_structured = {}
         try:
@@ -193,7 +191,6 @@ def create_sql_agent(llm):
                 # raw_decode parses the JSON starting at start_index and returns (obj, end_index)
                 # This ignores any "Extra data" after the JSON object.
                 raw_structured, end_index = decoder.raw_decode(content, start_index)
-                print(f"DEBUG: Successfully parsed JSON. Ignored trailing content starting at index {end_index}.")
             else:
                 # Force a thought if no JSON found
                 raw_structured = {
@@ -201,7 +198,6 @@ def create_sql_agent(llm):
                     "output_content": content.strip()
                 }
         except Exception as e:
-            print(f"DEBUG: JSON Parsing Exception: {e}")
             raw_structured = {
                 "output_type": "thought",
                 "output_content": f"JSON Parsing Error: {e}. Raw content: {content[:100]}..."

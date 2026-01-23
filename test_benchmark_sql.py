@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import argparse
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -11,6 +12,8 @@ from utils.datastore import DATASTORE
 from utils.messages import AgentMessage
 from utils.general_helpers import stream_graph
 from utils.llm_judge import BenchmarkJudge, JudgeResult
+from utils.api_call_counter import reset_api_call_count, get_api_call_count
+from utils.token_counter import reset_token_usage, get_token_usage
 
 def _load_queries(path: Path, limit: Optional[int], start: int) -> List[Dict[str, str]]:
     """Return a slice of benchmark queries from a JSON file."""
@@ -34,10 +37,17 @@ def _load_queries(path: Path, limit: Optional[int], start: int) -> List[Dict[str
 def run_agent_for_query(question: str, mode: str) -> Dict[str, Any]:
     """
     Runs the supervisor agent for a given question and mode (SPIDER or CUSTOM).
-    Returns a dictionary containing the Answer, Generated SQL, and any error info.
+    Returns Answer, SQL, API calls, tokens, execution time, and error info.
     """
     # Set the environment variable for the agent mode
     os.environ["SQL_AGENT_MODE"] = mode
+    
+    # Reset all counters before running
+    reset_api_call_count()
+    reset_token_usage()
+    
+    # Start timing
+    start_time = time.time()
     
     # Re-build graph to pick up the env var change
     compiled_graph = build_supervisor_graph()
@@ -50,8 +60,6 @@ def run_agent_for_query(question: str, mode: str) -> Dict[str, Any]:
         "global_messages_history": messages,
         "datastore": DATASTORE, 
         "database_schema": {},
-        # Ensure sub-agent histories are initialized if the graph expects them,
-        # though usually they are optional or initialized by the nodes.
         "sql_agent_messages_history": [], 
         "analysis_agent_messages_history": [],
         "visualization_agent_messages_history": []
@@ -70,30 +78,47 @@ def run_agent_for_query(question: str, mode: str) -> Dict[str, Any]:
             elif isinstance(final_msg, BaseMessage):
                 supervisor_answer = getattr(final_msg, 'content', str(final_msg))
 
-        # Extract "Last" Generated SQL
+        # Extract Generated SQL
         generated_sql = "N/A"
-        # We look through history for SQL Agent messages
-        # We want the LAST one that has a valid SQL query
         for msg in history:
             if isinstance(msg, AgentMessage) and msg.name == "SQL Agent":
                 structured = msg.structured_output
                 queries = structured.get("sql_queries", [])
                 if queries:
-                    # Take the last executed query from this step
                     generated_sql = queries[-1]
                 elif "sql_query" in structured:
                     generated_sql = structured["sql_query"]
         
+        # End timing and capture metrics
+        execution_time = time.time() - start_time
+        api_calls = get_api_call_count()
+        token_usage = get_token_usage()
+        
         return {
             "answer": supervisor_answer,
             "sql": generated_sql,
+            "api_calls": api_calls,
+            "prompt_tokens": token_usage.get("prompt_tokens", 0),
+            "completion_tokens": token_usage.get("completion_tokens", 0),
+            "total_tokens": token_usage.get("total_tokens", 0),
+            "execution_time": round(execution_time, 2),
             "error": None
         }
 
     except Exception as e:
+        # End timing and capture metrics even on error
+        execution_time = time.time() - start_time
+        api_calls = get_api_call_count()
+        token_usage = get_token_usage()
+        
         return {
             "answer": str(e),
             "sql": "ERROR",
+            "api_calls": api_calls,
+            "prompt_tokens": token_usage.get("prompt_tokens", 0),
+            "completion_tokens": token_usage.get("completion_tokens", 0),
+            "total_tokens": token_usage.get("total_tokens", 0),
+            "execution_time": round(execution_time, 2),
             "error": str(e)
         }
 
@@ -113,9 +138,6 @@ def main():
     
     results = []
     
-    # We will save incrementally to avoid data loss, but since we need to write a valid XLSX,
-    # we'll write the full dataframe each time.
-    
     for i, item in enumerate(queries_data):
         question = item.get("question")
         benchmark_sql = item.get("sql")
@@ -128,7 +150,7 @@ def main():
         
         # --- Run Custom Agent ---
         print("   Running Custom Agent...")
-        custom_res = run_agent_for_query(question, mode="CUSTOM") # Or whatever default mode is
+        custom_res = run_agent_for_query(question, mode="CUSTOM")
         
         # --- Judging ---
         print("   Judging Spider Results...")
@@ -139,7 +161,7 @@ def main():
         custom_sql_judge = judge.judge_sql(question, benchmark_sql, custom_res["sql"]) or JudgeResult(score=0, reasoning="Judge error/timeout")
         custom_ans_judge = judge.judge_answer(question, benchmark_sql, custom_res["answer"]) or JudgeResult(score=0, reasoning="Judge error/timeout")
         
-        # Collect Data
+        # Collect Data with metrics
         row = {
             "Question": question,
             "Benchmark SQL": benchmark_sql,
@@ -151,6 +173,11 @@ def main():
             "Spider SQL Reasoning": spider_sql_judge.reasoning,
             "Spider Answer Score": spider_ans_judge.score,
             "Spider Answer Reasoning": spider_ans_judge.reasoning,
+            "Spider API Calls": spider_res["api_calls"],
+            "Spider Prompt Tokens": spider_res["prompt_tokens"],
+            "Spider Completion Tokens": spider_res["completion_tokens"],
+            "Spider Total Tokens": spider_res["total_tokens"],
+            "Spider Time (s)": spider_res["execution_time"],
             
             # Custom Columns
             "Custom Generated SQL": custom_res["sql"],
@@ -158,7 +185,12 @@ def main():
             "Custom SQL Score": custom_sql_judge.score,
             "Custom SQL Reasoning": custom_sql_judge.reasoning,
             "Custom Answer Score": custom_ans_judge.score,
-            "Custom Answer Reasoning": custom_ans_judge.reasoning
+            "Custom Answer Reasoning": custom_ans_judge.reasoning,
+            "Custom API Calls": custom_res["api_calls"],
+            "Custom Prompt Tokens": custom_res["prompt_tokens"],
+            "Custom Completion Tokens": custom_res["completion_tokens"],
+            "Custom Total Tokens": custom_res["total_tokens"],
+            "Custom Time (s)": custom_res["execution_time"],
         }
         
         results.append(row)

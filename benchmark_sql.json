@@ -193,12 +193,12 @@
     {
       "role": "operateur",
       "question": "Sur le site Y, quels types de données sont mesurés (metric / unit) ?",
-      "sql": "SELECT DISTINCT rm.metric, rm.unit FROM public.sites s JOIN public.site_gateways sg ON sg.site_id = s.site_id JOIN public.gateways g ON g.gateway_id = sg.gateway_id JOIN public.raw_measurements rm ON rm.gateway_name = g.name WHERE s.name = 'Y' ORDER BY rm.metric, rm.unit;"
+      "sql": "NO SQL IS EXPECTED"
     },
     {
       "role": "operateur",
       "question": "Sur le site Y, ai-je des données avant 2021 pour le capteur Z ?",
-      "sql": "SELECT MIN(timestamp::timestamptz) AS first_measure, MAX(timestamp::timestamptz) AS last_measure, COUNT(*) FILTER (WHERE timestamp::timestamptz < TIMESTAMPTZ '2021-01-01') AS rows_before_2021 FROM public.raw_measurements rm JOIN public.gateways g ON g.name = rm.gateway_name JOIN public.site_gateways sg ON sg.gateway_id = g.gateway_id JOIN public.sites s ON s.site_id = sg.site_id WHERE s.name = 'Y' AND rm.sensor_id = Z;"
+      "sql": "NO SQL IS EXPECTED"
     }
   ]
 }
